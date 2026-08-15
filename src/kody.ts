@@ -1,5 +1,12 @@
-import { getPreferenceValues, LocalStorage } from "@raycast/api";
-import type { Skill } from "./mention";
+import { Result } from "better-result";
+import { getPreferenceValues } from "@raycast/api";
+import {
+  LoadFailed,
+  SkillsMissing,
+  type PackageTool,
+  type SkillItem,
+  type ToolItem,
+} from "./pouch";
 
 export type Prefs = {
   baseUrl: string;
@@ -8,51 +15,47 @@ export type Prefs = {
   discoveryKodyId: string;
 };
 
-export type InvocationTarget = {
+type InvocationTarget = {
   kodyId: string;
   exportName: string;
   params: Record<string, unknown>;
 };
 
-export type SavedCommand = InvocationTarget & {
-  id: string;
-  title: string;
-  createdAt: string;
-};
-
-export type KodyPackage = {
+type KodyPackage = {
   packageId: string;
   kodyId: string;
-  name: string;
-  description: string;
-  tags: string[];
-  hasApp: boolean;
-  updatedAt?: string;
 };
 
-export type KodyExport = {
-  subpath: string;
+type KodyExport = {
   exportName: string;
-  importSpecifier: string;
-  runtimeTarget: string;
-  typesPath: string | null;
   description: string;
-  typeDefinition: string | null;
 };
 
-export type GetPackageResult = {
-  packageId: string;
+type GetPackageResult = {
   kodyId: string;
-  name: string;
-  description: string;
-  tags: string[];
-  hasApp: boolean;
   exports: KodyExport[];
 };
 
-const STORAGE_KEY = "saved-commands";
+type CapabilityRecord = {
+  name: string;
+  description: string;
+  source: "builtin" | "remote-connector" | "mcp-server" | "openapi";
+  mcpServer?: {
+    kodyName?: string;
+    serverName?: string;
+    toolName?: string;
+  };
+  openApi?: {
+    bindingName?: string;
+    operationSlug?: string;
+  };
+  remoteConnector?: {
+    connectorName?: string;
+    toolName?: string;
+  };
+};
 
-export function getPrefs(): Prefs {
+function getPrefs(): Prefs {
   const prefs = getPreferenceValues<Prefs & { discoveryKodyId?: string }>();
   return {
     ...prefs,
@@ -60,7 +63,7 @@ export function getPrefs(): Prefs {
   };
 }
 
-export function toRouteExportName(exportName: string): string {
+function toRouteExportName(exportName: string): string {
   const trimmed = exportName.replace(/^\.\//, "");
   if (trimmed === "" || trimmed === "." || trimmed === "__root__") {
     return "__root__";
@@ -68,18 +71,17 @@ export function toRouteExportName(exportName: string): string {
   return trimmed;
 }
 
-export function displayExportName(exportName: string): string {
+function displayExportName(exportName: string): string {
   const route = toRouteExportName(exportName);
   return route === "__root__" ? "." : route;
 }
 
-export async function invokeKodyExport<T>({
+async function invokeKodyExport<T>({
   kodyId,
   exportName,
   params = {},
 }: InvocationTarget): Promise<T> {
   const prefs = getPrefs();
-  // Live Kody routes the root export as __root__, not "."
   const route = toRouteExportName(exportName);
   const path = [kodyId, ...route.split("/").filter(Boolean)]
     .map(encodeURIComponent)
@@ -110,72 +112,138 @@ export async function invokeKodyExport<T>({
   return (body.result ?? body.data ?? body.output ?? body) as T;
 }
 
-export async function listPackages(): Promise<KodyPackage[]> {
-  const result = await invokeKodyExport<{ packages: KodyPackage[] }>({
-    kodyId: getPrefs().discoveryKodyId,
-    exportName: "list-packages",
-    params: {},
-  });
-  return result.packages;
-}
-
-export async function getPackageDetail(input: {
-  packageId?: string;
-  kodyId?: string;
-}): Promise<GetPackageResult> {
-  return invokeKodyExport<GetPackageResult>({
-    kodyId: getPrefs().discoveryKodyId,
-    exportName: "get-package",
-    params: input,
-  });
-}
-
-export async function listSkills(): Promise<Skill[]> {
-  const result = await invokeKodyExport<Skill[]>({
-    kodyId: "skills",
-    exportName: "skill-list",
-    params: {},
-  });
-  if (!Array.isArray(result)) {
-    throw new Error("Skill list was not an array");
+export async function loadTools() {
+  try {
+    const packages = await invokeKodyExport<{ packages: KodyPackage[] }>({
+      kodyId: getPrefs().discoveryKodyId,
+      exportName: "list-packages",
+      params: {},
+    });
+    const details = await Promise.all(
+      packages.packages.map((pkg) =>
+        invokeKodyExport<GetPackageResult>({
+          kodyId: getPrefs().discoveryKodyId,
+          exportName: "get-package",
+          params: { packageId: pkg.packageId },
+        }),
+      ),
+    );
+    const packageTools: PackageTool[] = details.flatMap((pkg) =>
+      pkg.exports.map((exp) => ({
+        kind: "tool",
+        parentKind: "package",
+        name: displayExportName(exp.exportName),
+        description: exp.description ?? "",
+        kodyId: pkg.kodyId,
+        exportName: exp.exportName,
+      })),
+    );
+    const extra = await loadCapabilities();
+    return Result.ok([...packageTools, ...extra]);
+  } catch (error) {
+    return Result.err(new LoadFailed({ message: publicMessage(error) }));
   }
-  return result;
 }
 
-export async function listSavedCommands(): Promise<SavedCommand[]> {
-  const raw = await LocalStorage.getItem<string>(STORAGE_KEY);
-  if (!raw) {
+export async function loadSkills() {
+  try {
+    const result = await invokeKodyExport<SkillItem[]>({
+      kodyId: "skills",
+      exportName: "skill-list",
+      params: {},
+    });
+    if (!Array.isArray(result)) {
+      return Result.err(
+        new LoadFailed({ message: "Skill list was not an array" }),
+      );
+    }
+    return Result.ok(
+      result.map((skill) => ({
+        kind: "skill" as const,
+        name: skill.name,
+        id: skill.id,
+        description: skill.description ?? "",
+      })),
+    );
+  } catch (error) {
+    if (isMissingPackage(error)) {
+      return Result.err(new SkillsMissing({ message: publicMessage(error) }));
+    }
+    return Result.err(new LoadFailed({ message: publicMessage(error) }));
+  }
+}
+
+async function loadCapabilities(): Promise<ToolItem[]> {
+  try {
+    const result = await invokeKodyExport<{
+      capabilities?: CapabilityRecord[];
+    }>({
+      kodyId: getPrefs().discoveryKodyId,
+      exportName: "list-capabilities",
+      params: {},
+    });
+    return (result.capabilities ?? []).map(capabilityToItem);
+  } catch {
     return [];
   }
-  return JSON.parse(raw) as SavedCommand[];
 }
 
-export async function saveCommand(command: SavedCommand): Promise<void> {
-  const commands = await listSavedCommands();
-  const next = [command, ...commands.filter((item) => item.id !== command.id)];
-  await LocalStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-}
-
-export async function deleteCommand(id: string): Promise<void> {
-  const commands = await listSavedCommands();
-  await LocalStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(commands.filter((item) => item.id !== id)),
-  );
-}
-
-export function parseParamsJson(raw: string): Record<string, unknown> {
-  const trimmed = raw.trim() === "" ? "{}" : raw;
-  const parsed: unknown = JSON.parse(trimmed);
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Params must be a JSON object");
+function capabilityToItem(cap: CapabilityRecord): ToolItem {
+  switch (cap.source) {
+    case "builtin":
+      return {
+        kind: "tool",
+        parentKind: "kody",
+        name: cap.name,
+        description: cap.description,
+        capability: cap.name,
+      };
+    case "mcp-server":
+      return {
+        kind: "tool",
+        parentKind: "mcp",
+        name: cap.mcpServer?.toolName ?? cap.name,
+        description: cap.description,
+        server: cap.mcpServer?.kodyName ?? cap.mcpServer?.serverName ?? "mcp",
+        tool: cap.mcpServer?.toolName ?? cap.name,
+      };
+    case "openapi":
+      return {
+        kind: "tool",
+        parentKind: "other",
+        name: cap.openApi?.operationSlug ?? cap.name,
+        description: cap.description,
+        provider: "openapi",
+        ref: [cap.openApi?.bindingName, cap.openApi?.operationSlug]
+          .filter(Boolean)
+          .join(" "),
+      };
+    case "remote-connector":
+      return {
+        kind: "tool",
+        parentKind: "other",
+        name: cap.remoteConnector?.toolName ?? cap.name,
+        description: cap.description,
+        provider: "remote",
+        ref: [cap.remoteConnector?.connectorName, cap.remoteConnector?.toolName]
+          .filter(Boolean)
+          .join(" "),
+      };
+    default: {
+      const _never: never = cap.source;
+      return _never;
+    }
   }
-  return parsed as Record<string, unknown>;
 }
 
-export function formatResult(value: unknown): string {
-  if (typeof value === "string") {
-    return value;
+function isMissingPackage(error: unknown): boolean {
+  const text = publicMessage(error);
+  return /not found|unknown package|no such package|failed \(404\)/i.test(text);
+}
+
+function publicMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
   }
-  return JSON.stringify(value, null, 2);
+  return String(error);
 }

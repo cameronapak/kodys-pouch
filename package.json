@@ -1,34 +1,30 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "kody-raycast",
-  "title": "Kody",
-  "description": "Pick a Kody package export, save it as a command, and run it from Raycast.",
+  "title": "Kody Pouch",
+  "description": "Search Kody Tools and Skills and paste a Mention into the Active Input.",
   "icon": "icon.png",
   "author": "cameronpak",
-  "categories": ["Developer Tools", "Productivity"],
+  "categories": [
+    "Developer Tools",
+    "Productivity"
+  ],
   "license": "MIT",
-  "platforms": ["macOS"],
+  "platforms": [
+    "macOS"
+  ],
   "commands": [
     {
-      "name": "launcher",
-      "title": "Kody Commands",
-      "description": "Run, add, edit, or delete saved Kody package commands.",
+      "name": "kody-pouch",
+      "title": "Kody Pouch",
+      "description": "Search Kody Tools and Skills and paste a Mention.",
       "mode": "view",
-      "keywords": ["kody", "packages", "launcher"]
-    },
-    {
-      "name": "add-command",
-      "title": "Add Kody Command",
-      "description": "Browse Kody packages and save an export as a launcher command.",
-      "mode": "view",
-      "keywords": ["kody", "add", "package"]
-    },
-    {
-      "name": "composer",
-      "title": "Kody Prompt",
-      "description": "Compose a Prompt with Skill Mentions and paste it into the Active Input.",
-      "mode": "view",
-      "keywords": ["kody", "prompt", "skill", "mention"]
+      "keywords": [
+        "kody",
+        "pouch",
+        "skill",
+        "tool"
+      ]
     }
   ],
   "preferences": [
@@ -66,7 +62,9 @@
   ],
   "dependencies": {
     "@raycast/api": "^1.94.0",
-    "@raycast/utils": "^1.19.1"
+    "@raycast/utils": "^1.19.1",
+    "better-result": "^3.0.1",
+    "fuse.js": "^7.5.0"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.0.4",
@@ -81,6 +79,6 @@
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
-    "test": "node --experimental-strip-types --test src/composer.test.ts"
+    "test": "node --experimental-strip-types --test src/pouch.test.ts"
   }
 }

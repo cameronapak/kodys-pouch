@@ -1,14 +1,14 @@
-# Kody Raycast
+# Kody Pouch
 
-Local picker for your Kody packages. Browse exports, save commands, run them from Raycast.
+Raycast window into your Kody Pouch. Search Tools and Skills. Pick one to paste a Mention into the Active Input. If there is no Active Input, the Mention is copied.
 
-Uses your `@cameronpak/raycast` discovery package over HTTP. Personal automations stay in your other packages.
+Kody is the source of truth. This extension does not read disk skills or write stubs.
 
 ## Setup
 
 1. Create a token: [Personal Raycast token](https://kody.codes/account/package-invocation-tokens/new?name=Personal%20Raycast&packageKodyIds=*&exportNames=*&sources=raycast)
 2. `npm install && npm run dev`
-3. Open **Kody Commands** in Raycast
+3. Open **Kody Pouch** in Raycast
 4. Set preferences: base URL (`https://kody.codes`), username, token, discovery id (`raycast`)
 
 Do not paste the token into chat.
@@ -17,7 +17,4 @@ Do not paste the token into chat.
 
 ## Use
 
-- **Kody Commands** — run, edit, or delete saved commands
-- **Add Kody Command** — pick a package, pick an export, save params
-- Run Once — invoke without saving
-- `⌘N` add, `⌘E` edit, `⌘⌫` delete
+Open **Kody Pouch**. Type to filter. Pick a row. The Mention pastes at the caret, or copies if no field is focused.
