@@ -17,18 +17,27 @@ export type SlashPartial = {
 };
 
 const MENTION = /\/[^\s]+ \(Kody skill_get id: [^)]+\)/;
-const PARTIAL_AT_END = /\/([^\s]*)$/;
+const SLASH_TOKEN = /\/([^\s]*)/g;
 
 export function findSlashPartial(
   text: string,
   caret: number,
 ): SlashPartial | null {
   const prefix = text.slice(0, caret);
-  const match = prefix.match(PARTIAL_AT_END);
-  if (!match) {
-    return null;
+  let last: SlashPartial | null = null;
+  for (const match of prefix.matchAll(SLASH_TOKEN)) {
+    const start = match.index ?? 0;
+    if (isCompletedMentionAt(text, start)) {
+      continue;
+    }
+    last = { start, query: match[1] ?? "" };
   }
-  return { start: match.index ?? 0, query: match[1] ?? "" };
+  return last;
+}
+
+function isCompletedMentionAt(text: string, start: number): boolean {
+  const matched = text.slice(start).match(MENTION);
+  return matched !== null && matched.index === 0;
 }
 
 export function filterSkills(skills: Skill[], query: string): Skill[] {

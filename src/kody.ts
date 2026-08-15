@@ -1,5 +1,5 @@
 import { getPreferenceValues, LocalStorage } from "@raycast/api";
-import type { Skill } from "./composer";
+import type { Skill } from "./mention";
 
 export type Prefs = {
   baseUrl: string;

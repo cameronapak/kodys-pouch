@@ -6,7 +6,7 @@ import {
   formatMention,
   isPrompt,
   replacePartial,
-} from "./composer.ts";
+} from "./mention.ts";
 
 const skills = [
   {
@@ -76,14 +76,32 @@ test("finds /gri mid-sentence when caret is after the partial", () => {
   });
 });
 
-test("no slash partial when caret is after later words", () => {
-  assert.equal(findSlashPartial("rewrite this /gri please", 24), null);
+test("finds unfinished /gri after later words", () => {
+  assert.deepEqual(findSlashPartial("rewrite this /gri please", 24), {
+    start: 13,
+    query: "gri",
+  });
 });
 
 test("no slash partial at the end of a completed Mention", () => {
   const text =
     "/grill-with-docs (Kody skill_get id: mattpocock-grill-with-docs)";
   assert.equal(findSlashPartial(text, text.length), null);
+});
+
+test("no slash partial after a completed Mention plus words", () => {
+  const text =
+    "/grill-with-docs (Kody skill_get id: mattpocock-grill-with-docs) please";
+  assert.equal(findSlashPartial(text, text.length), null);
+});
+
+test("finds a new /partial after a completed Mention", () => {
+  const mention = formatMention(skills[0]);
+  const text = `rewrite this ${mention} /sim`;
+  assert.deepEqual(findSlashPartial(text, text.length), {
+    start: text.lastIndexOf("/"),
+    query: "sim",
+  });
 });
 
 test("/gri matches grill-with-docs by name", () => {
