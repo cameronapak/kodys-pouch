@@ -24,7 +24,13 @@
         "pouch",
         "skill",
         "tool"
-      ]
+      ],
+      "hotkey": {
+        "modifiers": [
+          "opt"
+        ],
+        "key": "k"
+      }
     }
   ],
   "preferences": [

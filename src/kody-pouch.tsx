@@ -32,10 +32,24 @@ const TEXT_ROLES = new Set([
   "AXText",
 ]);
 
+function readCachedPouch(): MergedPouch {
+  const raw = inventoryCache.get(INVENTORY_CACHE_KEY);
+  if (!raw) {
+    return { items: [], errors: [] };
+  }
+  try {
+    return { items: JSON.parse(raw) as Item[], errors: [] };
+  } catch {
+    return { items: [], errors: [] };
+  }
+}
+
+const initialPouch = readCachedPouch();
+
 export default function KodyPouch() {
   const [query, setQuery] = useState("");
   const { data, isLoading } = useCachedPromise(loadPouch, [], {
-    initialData: readCachedPouch(),
+    initialData: initialPouch,
     keepPreviousData: true,
   });
   const pouch = data ?? { items: [], errors: [] };
@@ -72,6 +86,10 @@ export default function KodyPouch() {
                 title="Paste Mention"
                 icon={Icon.Clipboard}
                 onAction={() => void pickItem(item)}
+              />
+              <Action.CopyToClipboard
+                title="Copy Mention"
+                content={formatMention(item)}
               />
             </ActionPanel>
           }
@@ -153,18 +171,6 @@ async function loadPouch(): Promise<MergedPouch> {
     inventoryCache.set(INVENTORY_CACHE_KEY, JSON.stringify(merged.items));
   }
   return merged;
-}
-
-function readCachedPouch(): MergedPouch {
-  const raw = inventoryCache.get(INVENTORY_CACHE_KEY);
-  if (!raw) {
-    return { items: [], errors: [] };
-  }
-  try {
-    return { items: JSON.parse(raw) as Item[], errors: [] };
-  } catch {
-    return { items: [], errors: [] };
-  }
 }
 
 async function pickItem(item: Item) {

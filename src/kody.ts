@@ -1,5 +1,6 @@
 import { Result } from "better-result";
 import { getPreferenceValues } from "@raycast/api";
+import { withCache } from "@raycast/utils";
 import {
   LoadFailed,
   SkillsMissing,
@@ -112,8 +113,8 @@ async function invokeKodyExport<T>({
   return (body.result ?? body.data ?? body.output ?? body) as T;
 }
 
-export async function loadTools() {
-  try {
+const fetchPackageTools = withCache(
+  async (): Promise<PackageTool[]> => {
     const packages = await invokeKodyExport<{ packages: KodyPackage[] }>({
       kodyId: getPrefs().discoveryKodyId,
       exportName: "list-packages",
@@ -128,7 +129,7 @@ export async function loadTools() {
         }),
       ),
     );
-    const packageTools: PackageTool[] = details.flatMap((pkg) =>
+    return details.flatMap((pkg) =>
       pkg.exports.map((exp) => ({
         kind: "tool",
         parentKind: "package",
@@ -138,6 +139,13 @@ export async function loadTools() {
         exportName: exp.exportName,
       })),
     );
+  },
+  { maxAge: 5 * 60 * 1000, validate: Array.isArray },
+);
+
+export async function loadTools() {
+  try {
+    const packageTools = await fetchPackageTools();
     const extra = await loadCapabilities();
     return Result.ok([...packageTools, ...extra]);
   } catch (error) {
