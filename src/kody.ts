@@ -1,4 +1,5 @@
 import { getPreferenceValues, LocalStorage } from "@raycast/api";
+import type { Skill } from "./composer";
 
 export type Prefs = {
   baseUrl: string;
@@ -127,6 +128,18 @@ export async function getPackageDetail(input: {
     exportName: "get-package",
     params: input,
   });
+}
+
+export async function listSkills(): Promise<Skill[]> {
+  const result = await invokeKodyExport<Skill[]>({
+    kodyId: "skills",
+    exportName: "skill-list",
+    params: {},
+  });
+  if (!Array.isArray(result)) {
+    throw new Error("Skill list was not an array");
+  }
+  return result;
 }
 
 export async function listSavedCommands(): Promise<SavedCommand[]> {
