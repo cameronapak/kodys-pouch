@@ -75,12 +75,12 @@ export default function KodyPouch() {
       filtering={false}
       searchText={query}
       onSearchTextChange={setQuery}
-      searchBarPlaceholder="Search Kody Pouch"
+      searchBarPlaceholder="Search Kody's Pouch"
       searchBarAccessory={
         <ScopeDropdown options={options} scope={scope} onChange={setScope} />
       }
       navigationTitle={
-        pouch.errors.length > 0 ? pouch.errors.join(" · ") : "Kody Pouch"
+        pouch.errors.length > 0 ? pouch.errors.join(" · ") : "Kody's Pouch"
       }
     >
       {rows.map((item) => (

@@ -1,9 +1,9 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "kody-raycast",
-  "title": "Kody Pouch",
+  "name": "kodys-pouch",
+  "title": "Kody's Pouch",
   "description": "Search Kody Tools and Skills and paste a Mention into the Active Input.",
-  "icon": "icon.png",
+  "icon": "koala-pouch.png",
   "author": "cameronpak",
   "categories": [
     "Developer Tools",
@@ -15,8 +15,8 @@
   ],
   "commands": [
     {
-      "name": "kody-pouch",
-      "title": "Kody Pouch",
+      "name": "kodys-pouch",
+      "title": "Kody's Pouch",
       "description": "Search Kody Tools and Skills and paste a Mention.",
       "mode": "view",
       "keywords": [
