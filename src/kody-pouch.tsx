@@ -12,13 +12,18 @@ import { runAppleScript, useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
 import { loadSkills, loadTools } from "./kody";
 import {
+  emptyState,
   filterItems,
   formatMention,
   itemKey,
   mergeInventory,
   rowSubtitle,
+  scopeOptions,
   type Item,
   type MergedPouch,
+  type PouchEmpty,
+  type Scope,
+  type ScopeOption,
 } from "./pouch";
 
 const inventoryCache = new Cache();
@@ -48,16 +53,18 @@ const initialPouch = readCachedPouch();
 
 export default function KodyPouch() {
   const [query, setQuery] = useState("");
+  const [scope, setScope] = useState<Scope>({ type: "all" });
   const { data, isLoading } = useCachedPromise(loadPouch, [], {
     initialData: initialPouch,
     keepPreviousData: true,
   });
   const pouch = data ?? { items: [], errors: [] };
-  const rows = filterItems(pouch.items, query);
+  const options = scopeOptions(pouch.items);
+  const rows = filterItems(pouch.items, query, scope);
   const empty = emptyState({
+    items: pouch.items,
     query,
-    rowCount: rows.length,
-    itemCount: pouch.items.length,
+    scope,
     errors: pouch.errors,
     isLoading,
   });
@@ -69,6 +76,9 @@ export default function KodyPouch() {
       searchText={query}
       onSearchTextChange={setQuery}
       searchBarPlaceholder="Search Kody Pouch"
+      searchBarAccessory={
+        <ScopeDropdown options={options} scope={scope} onChange={setScope} />
+      }
       navigationTitle={
         pouch.errors.length > 0 ? pouch.errors.join(" · ") : "Kody Pouch"
       }
@@ -100,38 +110,81 @@ export default function KodyPouch() {
   );
 }
 
-type EmptyState =
-  { kind: "error"; message: string } | { kind: "no-match" } | { kind: "empty" };
-
-function emptyState({
-  query,
-  rowCount,
-  itemCount,
-  errors,
-  isLoading,
+function ScopeDropdown({
+  options,
+  scope,
+  onChange,
 }: {
-  query: string;
-  rowCount: number;
-  itemCount: number;
-  errors: string[];
-  isLoading: boolean;
-}): EmptyState | null {
-  if (rowCount > 0) {
-    return null;
-  }
-  if (errors.length > 0 && itemCount === 0) {
-    return { kind: "error", message: errors.join(" · ") };
-  }
-  if (query.trim() !== "") {
-    return { kind: "no-match" };
-  }
-  if (isLoading) {
-    return null;
-  }
-  return { kind: "empty" };
+  options: ScopeOption[];
+  scope: Scope;
+  onChange: (scope: Scope) => void;
+}) {
+  const kinds = options.filter((option) => option.scope.type !== "parent");
+  const parents = options.filter((option) => option.scope.type === "parent");
+  return (
+    <List.Dropdown
+      tooltip="Scope"
+      value={scopeValue(scope)}
+      onChange={(value) => onChange(scopeFromValue(value))}
+    >
+      <List.Dropdown.Section title="Kind">
+        {kinds.map((option) => (
+          <List.Dropdown.Item
+            key={scopeValue(option.scope)}
+            title={`${option.title} (${option.count})`}
+            value={scopeValue(option.scope)}
+          />
+        ))}
+      </List.Dropdown.Section>
+      {parents.length > 0 ? (
+        <List.Dropdown.Section title="Parents">
+          {parents.map((option) => (
+            <List.Dropdown.Item
+              key={scopeValue(option.scope)}
+              title={`${option.title} (${option.count})`}
+              value={scopeValue(option.scope)}
+            />
+          ))}
+        </List.Dropdown.Section>
+      ) : null}
+    </List.Dropdown>
+  );
 }
 
-function PouchEmpty({ state }: { state: EmptyState }) {
+function scopeValue(scope: Scope): string {
+  switch (scope.type) {
+    case "all":
+      return "all";
+    case "skills":
+      return "skills";
+    case "tools":
+      return "tools";
+    case "parent":
+      return `parent:${scope.parent}`;
+    default: {
+      const _never: never = scope;
+      return _never;
+    }
+  }
+}
+
+function scopeFromValue(value: string): Scope {
+  switch (value) {
+    case "all":
+      return { type: "all" };
+    case "skills":
+      return { type: "skills" };
+    case "tools":
+      return { type: "tools" };
+    default:
+      if (value.startsWith("parent:")) {
+        return { type: "parent", parent: value.slice("parent:".length) };
+      }
+      return { type: "all" };
+  }
+}
+
+function PouchEmpty({ state }: { state: PouchEmpty }) {
   switch (state.kind) {
     case "error":
       return (
@@ -143,17 +196,14 @@ function PouchEmpty({ state }: { state: EmptyState }) {
       );
     case "no-match":
       return (
-        <List.EmptyView
-          icon={Icon.MagnifyingGlass}
-          title="No matching Tools or Skills"
-        />
+        <List.EmptyView icon={Icon.MagnifyingGlass} title={state.title} />
       );
     case "empty":
       return (
         <List.EmptyView
           icon={Icon.Tray}
-          title="Pouch is empty"
-          description="No Tools or Skills from Kody yet."
+          title={state.title}
+          description={state.description}
         />
       );
     default: {

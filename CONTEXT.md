@@ -9,7 +9,7 @@ The source of truth for the user's Skills, Tools, MCPs, secrets, and other durab
 _Avoid_: local config, editor settings, disk folders as source of truth
 
 **Pouch**:
-The user's inventory of Tools and Skills from Kody. The only Raycast command. Search matches name, description, and Parent. A successful pick writes one Mention and closes. It does not read disk or write stubs.
+The user's inventory of Tools and Skills from Kody. The only Raycast command. Scope narrows to All, Skills, Tools, or one Parent. Search matches name, description, and Parent. A successful pick writes one Mention and closes. It does not read disk or write stubs.
 _Avoid_: Commands list, Composer, launcher, stub, local SKILL.md
 
 **Skill**:
@@ -27,6 +27,10 @@ _Avoid_: owner, source, namespace
 **Package**:
 A Kody package the user can browse and invoke. A Package is one kind of Parent.
 _Avoid_: app, plugin
+
+**Scope**:
+Which slice of the Pouch is visible: All, Skills, Tools, or one Parent that has Tools. Skills and Tools are always options. Search matches inside the current Scope. Opening the Pouch starts at All.
+_Avoid_: Filter, Agent, category, a saved preference
 
 **Mention**:
 A one-line Pouch reference written only when a row is picked. Closing the Pouch writes nothing. Skill: `/name (Kody skill_get id: <id>)`. Package Tool: `/name (Kody invoke kodyId: <id> export: <export>)`. Built-in Tool: `/name (Kody <capability>)`. MCP Tool: `/name (Kody mcp <server> <tool>)`. Other Tools: same one-line pattern. Not the body.
