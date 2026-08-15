@@ -1,0 +1,78 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "kody-raycast",
+  "title": "Kody",
+  "description": "Pick a Kody package export, save it as a command, and run it from Raycast.",
+  "icon": "icon.png",
+  "author": "cameronpak",
+  "categories": ["Developer Tools", "Productivity"],
+  "license": "MIT",
+  "platforms": ["macOS"],
+  "commands": [
+    {
+      "name": "launcher",
+      "title": "Kody Commands",
+      "description": "Run, add, edit, or delete saved Kody package commands.",
+      "mode": "view",
+      "keywords": ["kody", "packages", "launcher"]
+    },
+    {
+      "name": "add-command",
+      "title": "Add Kody Command",
+      "description": "Browse Kody packages and save an export as a launcher command.",
+      "mode": "view",
+      "keywords": ["kody", "add", "package"]
+    }
+  ],
+  "preferences": [
+    {
+      "name": "baseUrl",
+      "title": "Kody Base URL",
+      "description": "Kody origin with no trailing slash.",
+      "type": "textfield",
+      "required": true,
+      "default": "https://kody.codes"
+    },
+    {
+      "name": "username",
+      "title": "Username",
+      "description": "Your Kody username.",
+      "type": "textfield",
+      "required": true,
+      "default": "cameronpak"
+    },
+    {
+      "name": "token",
+      "title": "Invocation Token",
+      "description": "Package invocation token for external Raycast calls.",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "discoveryKodyId",
+      "title": "Discovery package kody id",
+      "description": "Package used to list packages and load export metadata.",
+      "type": "textfield",
+      "required": true,
+      "default": "raycast"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.94.0",
+    "@raycast/utils": "^1.19.1"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.0.4",
+    "@types/node": "22.13.10",
+    "@types/react": "19.0.12",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint"
+  }
+}
