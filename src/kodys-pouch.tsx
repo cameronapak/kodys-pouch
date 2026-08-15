@@ -86,7 +86,7 @@ export default function KodyPouch() {
       {rows.map((item) => (
         <List.Item
           key={itemKey(item)}
-          icon={item.kind === "skill" ? Icon.Book : Icon.Hammer}
+          icon={item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver}
           title={item.name}
           subtitle={rowSubtitle(item)}
           accessories={[{ tag: item.kind === "skill" ? "Skill" : "Tool" }]}
