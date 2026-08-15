@@ -7,12 +7,15 @@ export type Prefs = {
   discoveryKodyId: string;
 };
 
-export type SavedCommand = {
-  id: string;
-  title: string;
+export type InvocationTarget = {
   kodyId: string;
   exportName: string;
   params: Record<string, unknown>;
+};
+
+export type SavedCommand = InvocationTarget & {
+  id: string;
+  title: string;
   createdAt: string;
 };
 
@@ -49,7 +52,11 @@ export type GetPackageResult = {
 const STORAGE_KEY = "saved-commands";
 
 export function getPrefs(): Prefs {
-  return getPreferenceValues<Prefs>();
+  const prefs = getPreferenceValues<Prefs & { discoveryKodyId?: string }>();
+  return {
+    ...prefs,
+    discoveryKodyId: prefs.discoveryKodyId?.trim() || "raycast",
+  };
 }
 
 export function toRouteExportName(exportName: string): string {
@@ -65,12 +72,13 @@ export function displayExportName(exportName: string): string {
   return route === "__root__" ? "." : route;
 }
 
-export async function invokeKodyExport<T>(
-  kodyId: string,
-  exportName: string,
-  params: Record<string, unknown> = {},
-): Promise<T> {
+export async function invokeKodyExport<T>({
+  kodyId,
+  exportName,
+  params = {},
+}: InvocationTarget): Promise<T> {
   const prefs = getPrefs();
+  // Live Kody routes the root export as __root__, not "."
   const route = toRouteExportName(exportName);
   const path = [kodyId, ...route.split("/").filter(Boolean)]
     .map(encodeURIComponent)
@@ -102,10 +110,11 @@ export async function invokeKodyExport<T>(
 }
 
 export async function listPackages(): Promise<KodyPackage[]> {
-  const result = await invokeKodyExport<{ packages: KodyPackage[] }>(
-    getPrefs().discoveryKodyId,
-    "list-packages",
-  );
+  const result = await invokeKodyExport<{ packages: KodyPackage[] }>({
+    kodyId: getPrefs().discoveryKodyId,
+    exportName: "list-packages",
+    params: {},
+  });
   return result.packages;
 }
 
@@ -113,11 +122,11 @@ export async function getPackageDetail(input: {
   packageId?: string;
   kodyId?: string;
 }): Promise<GetPackageResult> {
-  return invokeKodyExport<GetPackageResult>(
-    getPrefs().discoveryKodyId,
-    "get-package",
-    input,
-  );
+  return invokeKodyExport<GetPackageResult>({
+    kodyId: getPrefs().discoveryKodyId,
+    exportName: "get-package",
+    params: input,
+  });
 }
 
 export async function listSavedCommands(): Promise<SavedCommand[]> {

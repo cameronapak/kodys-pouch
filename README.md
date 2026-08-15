@@ -20,4 +20,4 @@ Do not paste the token into chat.
 - **Kody Commands** — run, edit, or delete saved commands
 - **Add Kody Command** — pick a package, pick an export, save params
 - Run Once — invoke without saving
-- `⌘N` add, `⌘E` edit, `⌃X` delete
+- `⌘N` add, `⌘E` edit, `⌘⌫` delete

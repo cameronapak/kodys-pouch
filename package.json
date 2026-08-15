@@ -51,9 +51,9 @@
     {
       "name": "discoveryKodyId",
       "title": "Discovery package kody id",
-      "description": "Package used to list packages and load export metadata.",
+      "description": "Package used to list packages and load export metadata. Defaults to raycast.",
       "type": "textfield",
-      "required": true,
+      "required": false,
       "default": "raycast"
     }
   ],

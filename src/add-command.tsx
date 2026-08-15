@@ -38,11 +38,7 @@ export function PackagePicker({ onSaved }: PackagePickerProps) {
       navigationTitle="Add Kody Command"
     >
       {error ? (
-        <List.EmptyView
-          icon={Icon.Warning}
-          title="Could not list packages"
-          description={error.message}
-        />
+        <ErrorView title="Could not list packages" message={error.message} />
       ) : null}
       {(data ?? []).map((pkg) => (
         <List.Item
@@ -84,14 +80,16 @@ function ExportPicker({ pkg, onSaved }: ExportPickerProps) {
       isShowingDetail
     >
       {error ? (
-        <List.EmptyView
-          icon={Icon.Warning}
-          title="Could not load exports"
-          description={error.message}
-        />
+        <ErrorView title="Could not load exports" message={error.message} />
       ) : null}
       {(data?.exports ?? []).map((exp) => {
         const exportName = exp.exportName || exp.subpath;
+        const form = {
+          kodyId: pkg.kodyId,
+          label: pkg.name,
+          exportName,
+          typeDefinition: exp.typeDefinition,
+        };
         return (
           <List.Item
             key={exp.subpath}
@@ -120,26 +118,12 @@ function ExportPicker({ pkg, onSaved }: ExportPickerProps) {
                 <Action.Push
                   title="Save Command"
                   icon={Icon.Plus}
-                  target={
-                    <SaveCommandForm
-                      pkg={pkg}
-                      exportName={exportName}
-                      typeDefinition={exp.typeDefinition}
-                      onSaved={onSaved}
-                    />
-                  }
+                  target={<SaveCommandForm {...form} onSaved={onSaved} />}
                 />
                 <Action.Push
                   title="Run Once"
                   icon={Icon.Play}
-                  target={
-                    <SaveCommandForm
-                      pkg={pkg}
-                      exportName={exportName}
-                      typeDefinition={exp.typeDefinition}
-                      runOnce
-                    />
-                  }
+                  target={<SaveCommandForm {...form} runOnce />}
                 />
               </ActionPanel>
             }
@@ -151,17 +135,19 @@ function ExportPicker({ pkg, onSaved }: ExportPickerProps) {
 }
 
 type SaveCommandFormProps = {
-  pkg: KodyPackage;
+  kodyId: string;
   exportName: string;
-  typeDefinition: string | null;
+  label?: string;
+  typeDefinition?: string | null;
   command?: SavedCommand;
   runOnce?: boolean;
   onSaved?: () => void;
 };
 
 export function SaveCommandForm({
-  pkg,
+  kodyId,
   exportName,
+  label,
   typeDefinition,
   command,
   runOnce = false,
@@ -171,7 +157,7 @@ export function SaveCommandForm({
   const [titleError, setTitleError] = useState<string | undefined>();
   const [paramsError, setParamsError] = useState<string | undefined>();
   const defaultTitle =
-    command?.title ?? `${pkg.name} / ${displayExportName(exportName)}`;
+    command?.title ?? `${label ?? kodyId} / ${displayExportName(exportName)}`;
   const defaultParams = command
     ? JSON.stringify(command.params, null, 2)
     : "{}";
@@ -192,24 +178,18 @@ export function SaveCommandForm({
       return;
     }
 
+    const target = { kodyId, exportName, params };
+
     if (runOnce) {
-      push(
-        <ResultView
-          kodyId={pkg.kodyId}
-          exportName={exportName}
-          params={params}
-        />,
-      );
+      push(<ResultView target={target} />);
       return;
     }
 
     try {
       await saveCommand({
+        ...target,
         id: command?.id ?? crypto.randomUUID(),
         title,
-        kodyId: pkg.kodyId,
-        exportName,
-        params,
         createdAt: command?.createdAt ?? new Date().toISOString(),
       });
       onSaved?.();
@@ -253,9 +233,15 @@ export function SaveCommandForm({
       />
       <Form.Description
         title="Target"
-        text={`${pkg.kodyId} / ${displayExportName(exportName)}`}
+        text={`${kodyId} / ${displayExportName(exportName)}`}
       />
     </Form>
+  );
+}
+
+function ErrorView({ title, message }: { title: string; message: string }) {
+  return (
+    <List.EmptyView icon={Icon.Warning} title={title} description={message} />
   );
 }
 

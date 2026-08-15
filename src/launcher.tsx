@@ -65,13 +65,7 @@ function CommandActions({ command, onChange }: CommandActionsProps) {
       <Action.Push
         title="Run Command"
         icon={Icon.Play}
-        target={
-          <ResultView
-            kodyId={command.kodyId}
-            exportName={command.exportName}
-            params={command.params}
-          />
-        }
+        target={<ResultView target={command} />}
       />
       <Action.Push
         title="Add Command"
@@ -85,16 +79,8 @@ function CommandActions({ command, onChange }: CommandActionsProps) {
         shortcut={Keyboard.Shortcut.Common.Edit}
         target={
           <SaveCommandForm
-            pkg={{
-              packageId: "",
-              kodyId: command.kodyId,
-              name: command.kodyId,
-              description: "",
-              tags: [],
-              hasApp: false,
-            }}
+            kodyId={command.kodyId}
             exportName={command.exportName}
-            typeDefinition={null}
             command={command}
             onSaved={onChange}
           />

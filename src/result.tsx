@@ -1,23 +1,26 @@
 import { Action, ActionPanel, Detail, Icon } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
-import { displayExportName, formatResult, invokeKodyExport } from "./kody";
+import {
+  displayExportName,
+  formatResult,
+  invokeKodyExport,
+  type InvocationTarget,
+} from "./kody";
 
 type ResultViewProps = {
-  kodyId: string;
-  exportName: string;
-  params: Record<string, unknown>;
+  target: InvocationTarget;
 };
 
-export function ResultView({ kodyId, exportName, params }: ResultViewProps) {
+export function ResultView({ target }: ResultViewProps) {
   const { data, isLoading, error, revalidate } = usePromise(() =>
-    invokeKodyExport<unknown>(kodyId, exportName, params),
+    invokeKodyExport<unknown>(target),
   );
   const body = error
     ? error.message
     : data === undefined
       ? ""
       : formatResult(data);
-  const title = `${kodyId} / ${displayExportName(exportName)}`;
+  const title = `${target.kodyId} / ${displayExportName(target.exportName)}`;
 
   return (
     <Detail
