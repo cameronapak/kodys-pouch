@@ -168,7 +168,8 @@ export function filterItems(
             (item) =>
               item.name.toLowerCase().includes(needle) ||
               item.description.toLowerCase().includes(needle) ||
-              parentLabel(item).toLowerCase().includes(needle),
+              parentLabel(item).toLowerCase().includes(needle) ||
+              skillId(item).toLowerCase().includes(needle),
           )
         : new Fuse(
             scoped.map((item) => ({
@@ -176,9 +177,10 @@ export function filterItems(
               name: item.name,
               description: item.description,
               parent: parentLabel(item),
+              id: skillId(item),
             })),
             {
-              keys: ["name", "description", "parent"],
+              keys: ["name", "description", "parent", "id"],
               threshold: 0.3,
             },
           )
@@ -283,6 +285,10 @@ export function scopeOptions(items: Item[]): ScopeOption[] {
       count: parentCounts.get(parent) ?? 0,
     })),
   ];
+}
+
+function skillId(item: Item): string {
+  return item.kind === "skill" ? item.id : "";
 }
 
 function itemsInScope(items: Item[], scope: Scope): Item[] {

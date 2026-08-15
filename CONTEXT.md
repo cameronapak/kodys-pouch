@@ -9,12 +9,12 @@ The source of truth for the user's Skills, Tools, MCPs, secrets, and other durab
 _Avoid_: local config, editor settings, disk folders as source of truth
 
 **Pouch**:
-The user's inventory of Tools and Skills from Kody. The only Raycast command. Scope narrows to All, Skills, Tools, or one Parent. Search matches name, description, and Parent. A successful pick writes one Mention and closes. It does not read disk or write stubs.
+The user's inventory of Tools and Skills from Kody. The only Raycast command. Scope narrows to All, Skills, Tools, or one Parent. Search matches name, description, Parent, and a Skill's id. A successful pick writes one Mention and closes. It does not read disk or write stubs.
 _Avoid_: Commands list, Composer, launcher, stub, local SKILL.md
 
 **Skill**:
-A named, versioned instruction document stored in the Kody skills registry. In the Pouch only when the skills package exists. Disk copies are stale.
-_Avoid_: local SKILL.md as the canonical skill, tool
+A named, versioned instruction document stored in the Kody skills registry. Display name and id can differ. In the Pouch only when the skills package exists. Disk copies are stale.
+_Avoid_: local SKILL.md as the canonical skill, tool, Author
 
 **Tool**:
 Anything Kody can call. Parent is a Package, Kody, an MCP server, or another connected provider.

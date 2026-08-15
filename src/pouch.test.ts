@@ -300,6 +300,14 @@ test("grill matches a Skill by name", () => {
   assert.deepEqual(filterItems(inventory, "grill"), [grill]);
 });
 
+test("matt matches a Skill by id when name and description do not", () => {
+  assert.deepEqual(filterItems(inventory, "matt"), [grill]);
+});
+
+test("Tools Scope ignores Skill id", () => {
+  assert.deepEqual(filterItems(inventory, "matt", { type: "tools" }), []);
+});
+
 test("macro matches an MCP Tool by Parent", () => {
   assert.deepEqual(filterItems(inventory, "macro"), [listSkills]);
 });
