@@ -7,8 +7,10 @@ import {
   emptyState,
   filterItems,
   formatMention,
+  isRootExport,
   mergeInventory,
   presentPouch,
+  rowTitle,
   scopeOptions,
   type Item,
   type Scope,
@@ -97,6 +99,11 @@ function presented(items: Item[], query = "", scope: Scope = { type: "all" }) {
   }));
 }
 
+test("row titles prefix Skills with / and Tools with $", () => {
+  assert.equal(rowTitle(grill), "/grill-with-docs");
+  assert.equal(rowTitle(skillGet), "$skill-get");
+});
+
 test("Skill Mention keeps name and id distinct", () => {
   assert.equal(
     formatMention({
@@ -121,6 +128,50 @@ test("Package Tool Mention names invoke kodyId and export", () => {
     }),
     "/skill-get (Kody invoke kodyId: skills export: skill-get)",
   );
+});
+
+test("root package export names are recognized", () => {
+  assert.equal(isRootExport("."), true);
+  assert.equal(isRootExport("__root__"), true);
+  assert.equal(isRootExport("./"), true);
+  assert.equal(isRootExport("./."), true);
+  assert.equal(isRootExport(""), true);
+  assert.equal(isRootExport("skill-get"), false);
+  assert.equal(isRootExport("./skill-get"), false);
+});
+
+test("root package export is omitted from inventory", () => {
+  const root: Item = {
+    kind: "tool",
+    parentKind: "package",
+    name: ".",
+    description: "Describe the skills package",
+    kodyId: "skills",
+    exportName: ".",
+  };
+  const merged = mergeInventory({
+    tools: Result.ok([root, skillGet]),
+    skills: Result.ok([]),
+  });
+  assert.deepEqual(merged.items, [skillGet]);
+});
+
+test("last-good inventory drops a cached root package export", () => {
+  const root: Item = {
+    kind: "tool",
+    parentKind: "package",
+    name: ".",
+    description: "Describe the skills package",
+    kodyId: "skills",
+    exportName: "__root__",
+  };
+  const merged = mergeInventory({
+    tools: Result.err(new LoadFailed({ message: "tools down" })),
+    skills: Result.err(new SkillsMissing({ message: "no skills package" })),
+    lastGood: [root, skillGet],
+  });
+  assert.deepEqual(merged.items, [skillGet]);
+  assert.deepEqual(merged.errors, ["tools down"]);
 });
 
 test("Built-in Tool Mention names the capability", () => {

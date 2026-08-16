@@ -116,17 +116,46 @@ export function mergeInventory(input: {
     errors.push(input.skills.error.message);
   }
 
-  const items = [...tools, ...skills];
+  const items = withoutRootExports([...tools, ...skills]);
   if (
     items.length === 0 &&
     errors.length > 0 &&
     input.lastGood &&
     input.lastGood.length > 0
   ) {
-    return { items: input.lastGood, errors };
+    return { items: withoutRootExports(input.lastGood), errors };
   }
 
   return { items, errors };
+}
+
+export function isRootExport(exportName: string): boolean {
+  const trimmed = exportName.replace(/^\.\//, "");
+  return trimmed === "" || trimmed === "." || trimmed === "__root__";
+}
+
+export function withoutRootExports(items: Item[]): Item[] {
+  return items.filter(
+    (item) =>
+      !(
+        item.kind === "tool" &&
+        item.parentKind === "package" &&
+        isRootExport(item.exportName)
+      ),
+  );
+}
+
+export function rowTitle(item: Item): string {
+  switch (item.kind) {
+    case "skill":
+      return `/${item.name}`;
+    case "tool":
+      return `$${item.name}`;
+    default: {
+      const _never: never = item;
+      return _never;
+    }
+  }
 }
 
 export function formatMention(item: Item): string {

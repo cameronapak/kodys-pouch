@@ -6,9 +6,11 @@ import {
   emptyState,
   formatMention,
   itemKey,
+  rowTitle,
   mergeInventory,
   presentPouch,
   scopeOptions,
+  withoutRootExports,
   type Item,
   type MergedPouch,
   type PouchEmpty,
@@ -27,7 +29,7 @@ function readCachedPouch(): MergedPouch {
     return { items: [], errors: [] };
   }
   try {
-    return { items: JSON.parse(raw) as Item[], errors: [] };
+    return { items: withoutRootExports(JSON.parse(raw) as Item[]), errors: [] };
   } catch {
     return { items: [], errors: [] };
   }
@@ -93,7 +95,7 @@ function PouchItem({ row }: { row: PouchRow }) {
         source: row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver,
         tintColor: Color.SecondaryText,
       }}
-      title={row.item.name}
+      title={rowTitle(row.item)}
       subtitle={row.subtitle}
       actions={
         <ActionPanel>

@@ -4,6 +4,7 @@ import { withCache } from "@raycast/utils";
 import {
   LoadFailed,
   SkillsMissing,
+  isRootExport,
   type PackageTool,
   type SkillItem,
   type ToolItem,
@@ -130,14 +131,16 @@ const fetchPackageTools = withCache(
       ),
     );
     return details.flatMap((pkg) =>
-      pkg.exports.map((exp) => ({
-        kind: "tool",
-        parentKind: "package",
-        name: displayExportName(exp.exportName),
-        description: exp.description ?? "",
-        kodyId: pkg.kodyId,
-        exportName: exp.exportName,
-      })),
+      pkg.exports
+        .filter((exp) => !isRootExport(exp.exportName))
+        .map((exp) => ({
+          kind: "tool",
+          parentKind: "package",
+          name: displayExportName(exp.exportName),
+          description: exp.description ?? "",
+          kodyId: pkg.kodyId,
+          exportName: exp.exportName,
+        })),
     );
   },
   { maxAge: 5 * 60 * 1000, validate: Array.isArray },
