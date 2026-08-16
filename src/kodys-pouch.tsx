@@ -1,14 +1,5 @@
-import {
-  Action,
-  ActionPanel,
-  Cache,
-  Clipboard,
-  Icon,
-  List,
-  closeMainWindow,
-  showHUD,
-} from "@raycast/api";
-import { runAppleScript, useCachedPromise } from "@raycast/utils";
+import { Action, ActionPanel, Cache, Icon, List } from "@raycast/api";
+import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
 import { loadSkills, loadTools } from "./kody";
 import {
@@ -29,14 +20,6 @@ import {
 
 const inventoryCache = new Cache();
 const INVENTORY_CACHE_KEY = "pouch-inventory";
-
-const TEXT_ROLES = new Set([
-  "AXTextField",
-  "AXTextArea",
-  "AXSearchField",
-  "AXComboBox",
-  "AXText",
-]);
 
 function readCachedPouch(): MergedPouch {
   const raw = inventoryCache.get(INVENTORY_CACHE_KEY);
@@ -103,6 +86,7 @@ function PouchSectionRows({ section }: { section: PouchSection }) {
 }
 
 function PouchItem({ row }: { row: PouchRow }) {
+  const mention = formatMention(row.item);
   return (
     <List.Item
       icon={row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver}
@@ -110,15 +94,8 @@ function PouchItem({ row }: { row: PouchRow }) {
       subtitle={row.subtitle}
       actions={
         <ActionPanel>
-          <Action
-            title="Paste Mention"
-            icon={Icon.Clipboard}
-            onAction={() => void pickItem(row.item)}
-          />
-          <Action.CopyToClipboard
-            title="Copy Mention"
-            content={formatMention(row.item)}
-          />
+          <Action.Paste title="Paste Mention" content={mention} />
+          <Action.CopyToClipboard title="Copy Mention" content={mention} />
         </ActionPanel>
       }
     />
@@ -234,41 +211,4 @@ async function loadPouch(): Promise<MergedPouch> {
     inventoryCache.set(INVENTORY_CACHE_KEY, JSON.stringify(merged.items));
   }
   return merged;
-}
-
-async function pickItem(item: Item) {
-  const mention = formatMention(item);
-  await closeMainWindow();
-  if (await hasActiveInput()) {
-    try {
-      await Clipboard.paste(mention);
-      return;
-    } catch {
-      await Clipboard.copy(mention);
-      await showHUD("Copied to clipboard");
-      return;
-    }
-  }
-  await Clipboard.copy(mention);
-  await showHUD("Copied to clipboard");
-}
-
-async function hasActiveInput(): Promise<boolean> {
-  try {
-    const role = await runAppleScript(`
-      tell application "System Events"
-        repeat 20 times
-          set proc to first application process whose frontmost is true
-          if name of proc is not "Raycast" then
-            return role of (value of attribute "AXFocusedUIElement" of proc)
-          end if
-          delay 0.05
-        end repeat
-        return "no"
-      end tell
-    `);
-    return TEXT_ROLES.has(role.trim());
-  } catch {
-    return false;
-  }
 }

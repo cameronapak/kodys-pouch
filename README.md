@@ -17,4 +17,4 @@ Do not paste the token into chat.
 
 ## Use
 
-Open **Kody's Pouch**. Type to filter. Pick a row. The Mention pastes at the caret, or copies if no field is focused.
+Open **Kody's Pouch**. Type to filter. Pick a row. The Mention pastes at the caret. Use Copy Mention for the clipboard.
