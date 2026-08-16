@@ -13,8 +13,12 @@ The user's inventory of Tools and Skills from Kody. The only Raycast command. Sc
 _Avoid_: Commands list, Composer, launcher, stub, local SKILL.md
 
 **Skill**:
-A named, versioned instruction document stored in the Kody skills registry. Display name and id can differ. In the Pouch only when the skills package exists. Disk copies are stale.
+A named, versioned instruction document stored in the Kody skills registry. Display name and id can differ. In the Pouch only when the skills package exists. Disk copies are stale. Grouped by Origin. Not a Tool and has no Parent.
 _Avoid_: local SKILL.md as the canonical skill, tool, Author
+
+**Origin**:
+The inferred group for a Skill: the first kebab segment of its id, only when two or more Skills in the inventory share that segment. Skills that do not share a prefix sit in Other Skills. Not a Parent. Not the retriever `source` on skill-search (always "skills registry").
+_Avoid_: source, author, Parent, skill-search source
 
 **Tool**:
 Anything Kody can call. Parent is a Package, Kody, an MCP server, or another connected provider.

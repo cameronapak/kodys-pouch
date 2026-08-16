@@ -58,6 +58,16 @@ export type ScopeOption = {
   count: number;
 };
 
+export type PouchRow = {
+  item: Item;
+  subtitle: string;
+};
+
+export type PouchSection = {
+  title: string | null;
+  rows: PouchRow[];
+};
+
 export type PouchEmpty =
   | { kind: "error"; message: string }
   | { kind: "no-match"; title: string }
@@ -330,9 +340,56 @@ export function itemKey(item: Item): string {
   }
 }
 
-export function rowSubtitle(item: Item): string {
+const OTHER_SKILLS = "Other Skills";
+
+export function presentPouch(
+  items: Item[],
+  query: string,
+  scope: Scope = { type: "all" },
+): PouchSection[] {
+  const matched = filterItems(items, query, scope);
+  if (matched.length === 0) {
+    return [];
+  }
+  const origins = skillOrigins(items);
+  switch (scope.type) {
+    case "parent":
+      return [flatSection(matched, origins)];
+    case "all":
+    case "skills":
+    case "tools": {
+      const titles = sectionTitles(matched, origins, scope);
+      if (titles.length < 2) {
+        return [flatSection(matched, origins)];
+      }
+      const buckets = new Map<string, Item[]>();
+      for (const item of matched) {
+        const title = groupTitle(item, origins);
+        if (title === "") {
+          continue;
+        }
+        const rows = buckets.get(title) ?? [];
+        rows.push(item);
+        buckets.set(title, rows);
+      }
+      return titles.map((title) => ({
+        title,
+        rows: (buckets.get(title) ?? []).map((item) => ({
+          item,
+          subtitle: descriptionLine(item),
+        })),
+      }));
+    }
+    default: {
+      const _never: never = scope;
+      return _never;
+    }
+  }
+}
+
+function rowSubtitle(item: Item): string {
   const parent = parentLabel(item);
-  const line = item.description.split("\n")[0] ?? "";
+  const line = descriptionLine(item);
   if (parent === "") {
     return line;
   }
@@ -340,6 +397,124 @@ export function rowSubtitle(item: Item): string {
     return parent;
   }
   return `${parent} · ${line}`;
+}
+
+function skillOrigins(items: Item[]): Map<string, string> {
+  const counts = new Map<string, number>();
+  for (const item of items) {
+    if (item.kind !== "skill") {
+      continue;
+    }
+    const prefix = idPrefix(item.id);
+    if (prefix === "") {
+      continue;
+    }
+    counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
+  }
+  const origins = new Map<string, string>();
+  for (const item of items) {
+    if (item.kind !== "skill") {
+      continue;
+    }
+    const prefix = idPrefix(item.id);
+    if (prefix !== "" && (counts.get(prefix) ?? 0) >= 2) {
+      origins.set(item.id, prefix);
+    }
+  }
+  return origins;
+}
+
+function idPrefix(id: string): string {
+  const dash = id.indexOf("-");
+  return dash === -1 ? "" : id.slice(0, dash);
+}
+
+function groupTitle(item: Item, origins: Map<string, string>): string {
+  if (item.kind === "skill") {
+    return origins.get(item.id) ?? OTHER_SKILLS;
+  }
+  return parentLabel(item);
+}
+
+function sectionTitles(
+  matched: Item[],
+  origins: Map<string, string>,
+  scope: Scope,
+): string[] {
+  const originTitles = new Set<string>();
+  let otherSkills = false;
+  const parentTitles = new Set<string>();
+  for (const item of matched) {
+    if (item.kind === "skill") {
+      const origin = origins.get(item.id);
+      if (origin) {
+        originTitles.add(origin);
+      } else {
+        otherSkills = true;
+      }
+      continue;
+    }
+    const parent = parentLabel(item);
+    if (parent !== "") {
+      parentTitles.add(parent);
+    }
+  }
+  const originsSorted = [...originTitles].sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
+  const parentsSorted = [...parentTitles].sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
+  switch (scope.type) {
+    case "all":
+      return [
+        ...originsSorted,
+        ...(otherSkills ? [OTHER_SKILLS] : []),
+        ...parentsSorted,
+      ];
+    case "skills":
+      return [...originsSorted, ...(otherSkills ? [OTHER_SKILLS] : [])];
+    case "tools":
+      return parentsSorted;
+    case "parent":
+      return [];
+    default: {
+      const _never: never = scope;
+      return _never;
+    }
+  }
+}
+
+function flatSection(
+  items: Item[],
+  origins: Map<string, string>,
+): PouchSection {
+  return {
+    title: null,
+    rows: items.map((item) => ({
+      item,
+      subtitle: flatSubtitle(item, origins),
+    })),
+  };
+}
+
+function flatSubtitle(item: Item, origins: Map<string, string>): string {
+  if (item.kind === "skill") {
+    const origin = origins.get(item.id) ?? "";
+    const line = descriptionLine(item);
+    if (origin === "") {
+      return line;
+    }
+    if (line === "") {
+      return origin;
+    }
+    return `${origin} · ${line}`;
+  }
+  return rowSubtitle(item);
+}
+
+function descriptionLine(item: Item): string {
+  return item.description.split("\n")[0] ?? "";
 }
 
 function formatToolMention(item: ToolItem): string {

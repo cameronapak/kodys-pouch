@@ -8,8 +8,10 @@ import {
   filterItems,
   formatMention,
   mergeInventory,
+  presentPouch,
   scopeOptions,
   type Item,
+  type Scope,
 } from "./pouch.ts";
 
 const grill: Item = {
@@ -54,7 +56,46 @@ const canvaExport: Item = {
   ref: "canva createdesignexportjob",
 };
 
+const tdd: Item = {
+  kind: "skill",
+  name: "tdd",
+  id: "mattpocock-tdd",
+  description: "Test first",
+};
+
+const showMe: Item = {
+  kind: "skill",
+  name: "show-me",
+  id: "show-me",
+  description: "Draw it",
+};
+
+const recap: Item = {
+  kind: "skill",
+  name: "visual-recap",
+  id: "kentcdodds-visual-recap",
+  description: "PR recap",
+};
+
 const inventory: Item[] = [listSkills, grill, skillGet];
+
+const groupedInventory: Item[] = [
+  listSkills,
+  grill,
+  tdd,
+  showMe,
+  recap,
+  skillGet,
+  packageList,
+];
+
+function presented(items: Item[], query = "", scope: Scope = { type: "all" }) {
+  return presentPouch(items, query, scope).map((section) => ({
+    title: section.title,
+    names: section.rows.map((row) => row.item.name),
+    subtitles: section.rows.map((row) => row.subtitle),
+  }));
+}
 
 test("Skill Mention keeps name and id distinct", () => {
   assert.equal(
@@ -153,15 +194,17 @@ test("Tools Scope lists every Tool and no Skills", () => {
 });
 
 test("Parent skills lists that Package's Tools only", () => {
-  assert.deepEqual(filterItems(inventory, "", { type: "parent", parent: "skills" }), [
-    skillGet,
-  ]);
+  assert.deepEqual(
+    filterItems(inventory, "", { type: "parent", parent: "skills" }),
+    [skillGet],
+  );
 });
 
 test("Parent macro lists that MCP server's Tools only", () => {
-  assert.deepEqual(filterItems(inventory, "", { type: "parent", parent: "macro" }), [
-    listSkills,
-  ]);
+  assert.deepEqual(
+    filterItems(inventory, "", { type: "parent", parent: "macro" }),
+    [listSkills],
+  );
 });
 
 test("Search grill in Tools Scope matches nothing", () => {
@@ -198,7 +241,10 @@ test("same name Skill and Tool stay split by Kind", () => {
     description: "How to load a skill",
   };
   const items = [namedSkill, skillGet];
-  assert.deepEqual(filterItems(items, "", { type: "all" }), [namedSkill, skillGet]);
+  assert.deepEqual(filterItems(items, "", { type: "all" }), [
+    namedSkill,
+    skillGet,
+  ]);
   assert.deepEqual(filterItems(items, "", { type: "skills" }), [namedSkill]);
   assert.deepEqual(filterItems(items, "", { type: "tools" }), [skillGet]);
   assert.deepEqual(
@@ -542,4 +588,178 @@ test("both fetches fail with last-good keeps last-good and flags errors", () => 
   });
   assert.deepEqual(merged.items, [grill, skillGet]);
   assert.deepEqual(merged.errors, ["tools down", "skills down"]);
+});
+
+test("All groups Origins then Other Skills then Parents", () => {
+  assert.deepEqual(presented(groupedInventory), [
+    {
+      title: "mattpocock",
+      names: ["grill-with-docs", "tdd"],
+      subtitles: ["Grill a plan", "Test first"],
+    },
+    {
+      title: "Other Skills",
+      names: ["show-me", "visual-recap"],
+      subtitles: ["Draw it", "PR recap"],
+    },
+    {
+      title: "Kody",
+      names: ["package_list"],
+      subtitles: ["List saved packages"],
+    },
+    {
+      title: "macro",
+      names: ["ListSkills"],
+      subtitles: ["List Macro skills"],
+    },
+    {
+      title: "skills",
+      names: ["skill-get"],
+      subtitles: ["Read a skill"],
+    },
+  ]);
+});
+
+test("Tools Scope groups by Parent only", () => {
+  assert.deepEqual(presented(groupedInventory, "", { type: "tools" }), [
+    {
+      title: "Kody",
+      names: ["package_list"],
+      subtitles: ["List saved packages"],
+    },
+    {
+      title: "macro",
+      names: ["ListSkills"],
+      subtitles: ["List Macro skills"],
+    },
+    {
+      title: "skills",
+      names: ["skill-get"],
+      subtitles: ["Read a skill"],
+    },
+  ]);
+});
+
+test("Skills Scope groups by Origin then Other Skills", () => {
+  assert.deepEqual(presented(groupedInventory, "", { type: "skills" }), [
+    {
+      title: "mattpocock",
+      names: ["grill-with-docs", "tdd"],
+      subtitles: ["Grill a plan", "Test first"],
+    },
+    {
+      title: "Other Skills",
+      names: ["show-me", "visual-recap"],
+      subtitles: ["Draw it", "PR recap"],
+    },
+  ]);
+});
+
+test("one-Parent Scope is a flat list with Parent in the subtitle", () => {
+  assert.deepEqual(
+    presented(groupedInventory, "", { type: "parent", parent: "skills" }),
+    [
+      {
+        title: null,
+        names: ["skill-get"],
+        subtitles: ["skills · Read a skill"],
+      },
+    ],
+  );
+});
+
+test("one group on screen is a flat list", () => {
+  assert.deepEqual(presented([grill, tdd], "", { type: "skills" }), [
+    {
+      title: null,
+      names: ["grill-with-docs", "tdd"],
+      subtitles: ["mattpocock · Grill a plan", "mattpocock · Test first"],
+    },
+  ]);
+});
+
+test("Search keeps sections among matches", () => {
+  assert.deepEqual(presented(groupedInventory, "list"), [
+    {
+      title: "Kody",
+      names: ["package_list"],
+      subtitles: ["List saved packages"],
+    },
+    {
+      title: "macro",
+      names: ["ListSkills"],
+      subtitles: ["List Macro skills"],
+    },
+  ]);
+});
+
+test("Origin comes from the full inventory not the matches", () => {
+  assert.deepEqual(presented(groupedInventory, "grill"), [
+    {
+      title: null,
+      names: ["grill-with-docs"],
+      subtitles: ["mattpocock · Grill a plan"],
+    },
+  ]);
+});
+
+test("a singleton prefixed Skill sits in Other Skills", () => {
+  const sections = presented(groupedInventory, "", { type: "skills" });
+  const other = sections.find((section) => section.title === "Other Skills");
+  assert.deepEqual(other?.names, ["show-me", "visual-recap"]);
+});
+
+test("a Parent section lists that Parent's Tools A-Z", () => {
+  const skillList: Item = {
+    kind: "tool",
+    parentKind: "package",
+    name: "skill-list",
+    description: "List skills",
+    kodyId: "skills",
+    exportName: "skill-list",
+  };
+  assert.deepEqual(presented([skillGet, skillList, grill, tdd]), [
+    {
+      title: "mattpocock",
+      names: ["grill-with-docs", "tdd"],
+      subtitles: ["Grill a plan", "Test first"],
+    },
+    {
+      title: "skills",
+      names: ["skill-get", "skill-list"],
+      subtitles: ["Read a skill", "List skills"],
+    },
+  ]);
+});
+
+test("empty Other Skills is omitted", () => {
+  assert.deepEqual(presented([grill, tdd, skillGet, listSkills]), [
+    {
+      title: "mattpocock",
+      names: ["grill-with-docs", "tdd"],
+      subtitles: ["Grill a plan", "Test first"],
+    },
+    {
+      title: "macro",
+      names: ["ListSkills"],
+      subtitles: ["List Macro skills"],
+    },
+    {
+      title: "skills",
+      names: ["skill-get"],
+      subtitles: ["Read a skill"],
+    },
+  ]);
+});
+
+test("Scope options still omit Origin", () => {
+  const titles = scopeOptions(groupedInventory).map((option) => option.title);
+  assert.deepEqual(titles, [
+    "All",
+    "Skills",
+    "Tools",
+    "Kody",
+    "macro",
+    "skills",
+  ]);
 });

@@ -13,15 +13,16 @@ import { useState } from "react";
 import { loadSkills, loadTools } from "./kody";
 import {
   emptyState,
-  filterItems,
   formatMention,
   itemKey,
   mergeInventory,
-  rowSubtitle,
+  presentPouch,
   scopeOptions,
   type Item,
   type MergedPouch,
   type PouchEmpty,
+  type PouchRow,
+  type PouchSection,
   type Scope,
   type ScopeOption,
 } from "./pouch";
@@ -60,7 +61,7 @@ export default function KodyPouch() {
   });
   const pouch = data ?? { items: [], errors: [] };
   const options = scopeOptions(pouch.items);
-  const rows = filterItems(pouch.items, query, scope);
+  const sections = presentPouch(pouch.items, query, scope);
   const empty = emptyState({
     items: pouch.items,
     query,
@@ -83,30 +84,44 @@ export default function KodyPouch() {
         pouch.errors.length > 0 ? pouch.errors.join(" · ") : "Kody's Pouch"
       }
     >
-      {rows.map((item) => (
-        <List.Item
-          key={itemKey(item)}
-          icon={item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver}
-          title={item.name}
-          subtitle={rowSubtitle(item)}
-          accessories={[{ tag: item.kind === "skill" ? "Skill" : "Tool" }]}
-          actions={
-            <ActionPanel>
-              <Action
-                title="Paste Mention"
-                icon={Icon.Clipboard}
-                onAction={() => void pickItem(item)}
-              />
-              <Action.CopyToClipboard
-                title="Copy Mention"
-                content={formatMention(item)}
-              />
-            </ActionPanel>
-          }
-        />
+      {sections.map((section) => (
+        <PouchSectionRows key={section.title ?? "flat"} section={section} />
       ))}
       {empty ? <PouchEmpty state={empty} /> : null}
     </List>
+  );
+}
+
+function PouchSectionRows({ section }: { section: PouchSection }) {
+  const rows = section.rows.map((row) => (
+    <PouchItem key={itemKey(row.item)} row={row} />
+  ));
+  if (section.title === null) {
+    return <>{rows}</>;
+  }
+  return <List.Section title={section.title}>{rows}</List.Section>;
+}
+
+function PouchItem({ row }: { row: PouchRow }) {
+  return (
+    <List.Item
+      icon={row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver}
+      title={row.item.name}
+      subtitle={row.subtitle}
+      actions={
+        <ActionPanel>
+          <Action
+            title="Paste Mention"
+            icon={Icon.Clipboard}
+            onAction={() => void pickItem(row.item)}
+          />
+          <Action.CopyToClipboard
+            title="Copy Mention"
+            content={formatMention(row.item)}
+          />
+        </ActionPanel>
+      }
+    />
   );
 }
 
@@ -195,9 +210,7 @@ function PouchEmpty({ state }: { state: PouchEmpty }) {
         />
       );
     case "no-match":
-      return (
-        <List.EmptyView icon={Icon.MagnifyingGlass} title={state.title} />
-      );
+      return <List.EmptyView icon={Icon.MagnifyingGlass} title={state.title} />;
     case "empty":
       return (
         <List.EmptyView
