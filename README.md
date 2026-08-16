@@ -4,6 +4,8 @@ Raycast window into Kody's Pouch. Search Tools and Skills. Pick one to paste a M
 
 Kody is the source of truth. This extension does not read disk skills or write stubs.
 
+![Kody's Pouch](assets/demo.gif)
+
 ## Setup
 
 1. Create a token: [Personal Raycast token](https://kody.codes/account/package-invocation-tokens/new?name=Personal%20Raycast&packageKodyIds=*&exportNames=*&sources=raycast)
