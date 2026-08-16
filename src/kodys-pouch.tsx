@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Cache, Icon, List } from "@raycast/api";
+import { Action, ActionPanel, Cache, Color, Icon, List } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
 import { loadSkills, loadTools } from "./kody";
@@ -89,7 +89,10 @@ function PouchItem({ row }: { row: PouchRow }) {
   const mention = formatMention(row.item);
   return (
     <List.Item
-      icon={row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver}
+      icon={{
+        source: row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver,
+        tintColor: Color.SecondaryText,
+      }}
       title={row.item.name}
       subtitle={row.subtitle}
       actions={
@@ -187,11 +190,16 @@ function PouchEmpty({ state }: { state: PouchEmpty }) {
         />
       );
     case "no-match":
-      return <List.EmptyView icon={Icon.MagnifyingGlass} title={state.title} />;
+      return (
+        <List.EmptyView
+          icon={{ source: Icon.MagnifyingGlass, tintColor: Color.SecondaryText }}
+          title={state.title}
+        />
+      );
     case "empty":
       return (
         <List.EmptyView
-          icon={Icon.Tray}
+          icon={{ source: Icon.Tray, tintColor: Color.SecondaryText }}
           title={state.title}
           description={state.description}
         />
