@@ -1,7 +1,7 @@
-import { Action, ActionPanel, Cache, Color, Icon, List } from "@raycast/api";
+import { Action, ActionPanel, Cache, Color, Icon, Keyboard, List } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { useState } from "react";
-import { loadSkills, loadTools } from "./kody";
+import { clearPackageToolsCache, loadSkills, loadTools } from "./kody";
 import {
   emptyState,
   formatMention,
@@ -40,7 +40,7 @@ const initialPouch = readCachedPouch();
 export default function KodyPouch() {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<Scope>({ type: "all" });
-  const { data, isLoading } = useCachedPromise(loadPouch, [], {
+  const { data, isLoading, revalidate } = useCachedPromise(loadPouch, [], {
     initialData: initialPouch,
     keepPreviousData: true,
   });
@@ -54,10 +54,14 @@ export default function KodyPouch() {
     errors: pouch.errors,
     isLoading,
   });
+  const onRefresh = () => {
+    clearPackageToolsCache();
+    revalidate();
+  };
 
   return (
     <List
-      isLoading={isLoading && pouch.items.length === 0}
+      isLoading={isLoading}
       filtering={false}
       searchText={query}
       onSearchTextChange={setQuery}
@@ -70,16 +74,26 @@ export default function KodyPouch() {
       }
     >
       {sections.map((section) => (
-        <PouchSectionRows key={section.title ?? "flat"} section={section} />
+        <PouchSectionRows
+          key={section.title ?? "flat"}
+          section={section}
+          onRefresh={onRefresh}
+        />
       ))}
-      {empty ? <PouchEmpty state={empty} /> : null}
+      {empty ? <PouchEmpty state={empty} onRefresh={onRefresh} /> : null}
     </List>
   );
 }
 
-function PouchSectionRows({ section }: { section: PouchSection }) {
+function PouchSectionRows({
+  section,
+  onRefresh,
+}: {
+  section: PouchSection;
+  onRefresh: () => void;
+}) {
   const rows = section.rows.map((row) => (
-    <PouchItem key={itemKey(row.item)} row={row} />
+    <PouchItem key={itemKey(row.item)} row={row} onRefresh={onRefresh} />
   ));
   if (section.title === null) {
     return <>{rows}</>;
@@ -87,7 +101,13 @@ function PouchSectionRows({ section }: { section: PouchSection }) {
   return <List.Section title={section.title}>{rows}</List.Section>;
 }
 
-function PouchItem({ row }: { row: PouchRow }) {
+function PouchItem({
+  row,
+  onRefresh,
+}: {
+  row: PouchRow;
+  onRefresh: () => void;
+}) {
   const mention = formatMention(row.item);
   return (
     <List.Item
@@ -101,8 +121,20 @@ function PouchItem({ row }: { row: PouchRow }) {
         <ActionPanel>
           <Action.Paste title="Paste Mention" content={mention} />
           <Action.CopyToClipboard title="Copy Mention" content={mention} />
+          <RefreshPouchAction onRefresh={onRefresh} />
         </ActionPanel>
       }
+    />
+  );
+}
+
+function RefreshPouchAction({ onRefresh }: { onRefresh: () => void }) {
+  return (
+    <Action
+      title="Refresh Pouch"
+      icon={Icon.ArrowClockwise}
+      shortcut={Keyboard.Shortcut.Common.Refresh}
+      onAction={onRefresh}
     />
   );
 }
@@ -181,7 +213,18 @@ function scopeFromValue(value: string): Scope {
   }
 }
 
-function PouchEmpty({ state }: { state: PouchEmpty }) {
+function PouchEmpty({
+  state,
+  onRefresh,
+}: {
+  state: PouchEmpty;
+  onRefresh: () => void;
+}) {
+  const actions = (
+    <ActionPanel>
+      <RefreshPouchAction onRefresh={onRefresh} />
+    </ActionPanel>
+  );
   switch (state.kind) {
     case "error":
       return (
@@ -189,6 +232,7 @@ function PouchEmpty({ state }: { state: PouchEmpty }) {
           icon={Icon.Warning}
           title="Could not refresh Pouch"
           description={state.message}
+          actions={actions}
         />
       );
     case "no-match":
@@ -196,6 +240,7 @@ function PouchEmpty({ state }: { state: PouchEmpty }) {
         <List.EmptyView
           icon={{ source: Icon.MagnifyingGlass, tintColor: Color.SecondaryText }}
           title={state.title}
+          actions={actions}
         />
       );
     case "empty":
@@ -204,6 +249,7 @@ function PouchEmpty({ state }: { state: PouchEmpty }) {
           icon={{ source: Icon.Tray, tintColor: Color.SecondaryText }}
           title={state.title}
           description={state.description}
+          actions={actions}
         />
       );
     default: {

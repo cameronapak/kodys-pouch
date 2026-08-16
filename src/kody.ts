@@ -146,6 +146,10 @@ const fetchPackageTools = withCache(
   { maxAge: 5 * 60 * 1000, validate: Array.isArray },
 );
 
+export function clearPackageToolsCache() {
+  fetchPackageTools.clearCache();
+}
+
 export async function loadTools() {
   try {
     const packageTools = await fetchPackageTools();
