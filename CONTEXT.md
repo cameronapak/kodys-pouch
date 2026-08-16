@@ -37,7 +37,7 @@ Which slice of the Pouch is visible: All, Skills, Tools, or one Parent that has 
 _Avoid_: Filter, Agent, category, a saved preference
 
 **Mention**:
-A one-line Pouch reference written only when a row is picked. Closing the Pouch writes nothing. Skill: `/name (Kody skill_get id: <id>)`. Package Tool: `/name (Kody invoke kodyId: <id> export: <export>)`. Built-in Tool: `/name (Kody <capability>)`. MCP Tool: `/name (Kody mcp <server> <tool>)`. Other Tools: same one-line pattern. Not the body.
+A one-line Pouch reference written only when a row is picked. Closing the Pouch writes nothing. Skill: `/name (Kody skill_get id: <id>)`. Package Tool: `$name (Kody invoke kodyId: <id> export: <export>)`. Built-in Tool: `$name (Kody <capability>)`. MCP Tool: `$name (Kody mcp <server> <tool>)`. Other Tools: same one-line pattern. Not the body.
 _Avoid_: stub, inline skill, bare name, multi-line mention, Prompt
 
 **Active Input**:

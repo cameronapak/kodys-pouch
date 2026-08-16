@@ -549,13 +549,13 @@ function descriptionLine(item: Item): string {
 function formatToolMention(item: ToolItem): string {
   switch (item.parentKind) {
     case "package":
-      return `/${item.name} (Kody invoke kodyId: ${item.kodyId} export: ${item.exportName})`;
+      return `$${item.name} (Kody invoke kodyId: ${item.kodyId} export: ${item.exportName})`;
     case "kody":
-      return `/${item.name} (Kody ${item.capability})`;
+      return `$${item.name} (Kody ${item.capability})`;
     case "mcp":
-      return `/${item.name} (Kody mcp ${item.server} ${item.tool})`;
+      return `$${item.name} (Kody mcp ${item.server} ${item.tool})`;
     case "other":
-      return `/${item.name} (Kody ${item.provider} ${item.ref})`;
+      return `$${item.name} (Kody ${item.provider} ${item.ref})`;
     default: {
       const _never: never = item;
       return _never;

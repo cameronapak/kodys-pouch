@@ -126,7 +126,7 @@ test("Package Tool Mention names invoke kodyId and export", () => {
       kodyId: "skills",
       exportName: "skill-get",
     }),
-    "/skill-get (Kody invoke kodyId: skills export: skill-get)",
+    "$skill-get (Kody invoke kodyId: skills export: skill-get)",
   );
 });
 
@@ -183,7 +183,7 @@ test("Built-in Tool Mention names the capability", () => {
       description: "List saved packages",
       capability: "package_list",
     }),
-    "/package_list (Kody package_list)",
+    "$package_list (Kody package_list)",
   );
 });
 
@@ -197,7 +197,7 @@ test("MCP Tool Mention names server and tool", () => {
       server: "macro",
       tool: "ListSkills",
     }),
-    "/ListSkills (Kody mcp macro ListSkills)",
+    "$ListSkills (Kody mcp macro ListSkills)",
   );
 });
 
@@ -211,7 +211,7 @@ test("Other Tool Mention follows the same one-line pattern", () => {
       provider: "openapi",
       ref: "canva createdesignexportjob",
     }),
-    "/createdesignexportjob (Kody openapi canva createdesignexportjob)",
+    "$createdesignexportjob (Kody openapi canva createdesignexportjob)",
   );
 });
 
