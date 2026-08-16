@@ -2,7 +2,7 @@
 
 - One Raycast command: Kody's Pouch. Search Tools and Skills, pick to paste a Mention. No compose field, no Add Commands, no Commands launcher.
 - Mentions are one line, never the Skill or Tool body. Skill: `/name (Kody skill_get id: <id>)`. Package Tool: `/name (Kody invoke kodyId: <id> export: <export>)`. Built-in: `/name (Kody <capability>)`. MCP: `/name (Kody mcp <server> <tool>)`.
-- Paste the Mention into the previously focused Active Input at the caret (or over the selection). Do not replace the whole field. No Active Input → clipboard and tell the user.
+- Paste the Mention into the previously focused Active Input at the caret (or over the selection). Do not replace the whole field. Use Raycast `Action.Paste` (not AppleScript focus checks). Copy Mention is the clipboard fallback.
 - Pick is the only write: closing Pouch without a pick is a no-op; a successful pick closes the Pouch.
 - Never paste Kody invocation tokens or secrets into chat.
 - Search with fuse.js over name, description, Parent, and a Skill's id. Use better-result v3 for errors-as-values. Do not add TanStack Query; use Raycast `useCachedPromise` + `Cache`.

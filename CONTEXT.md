@@ -45,5 +45,5 @@ The text field that had focus before Raycast opened. The Mention is pasted at th
 _Avoid_: clipboard as the destination, Raycast search bar, replace-all
 
 **Clipboard Fallback**:
-When there is no Active Input, the Mention is copied and the user is told. Clipboard is not the destination.
-_Avoid_: silent copy, fake paste
+Copy Mention is the fallback action. Pick always pastes via Raycast into the previously focused app. Clipboard is not the destination.
+_Avoid_: AppleScript focus checks, silent copy, fake paste
