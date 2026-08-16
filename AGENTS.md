@@ -7,6 +7,7 @@
 - Never paste Kody invocation tokens or secrets into chat.
 - Search with fuse.js over name, description, Parent, and a Skill's id. Use better-result v3 for errors-as-values. Do not add TanStack Query; use Raycast `useCachedPromise` + `Cache`.
 - List titles: Skills `/name`, Tools `$name`. Skill icon Document, Tool icon WrenchScrewdriver, both secondary/muted — not primary.
+- Manual refetch is a pouch-wide Action (⌘R / `Keyboard.Shortcut.Common.Refresh`) on every row and the empty view — not a second command.
 
 ## Learned Workspace Facts
 
@@ -19,3 +20,4 @@
 - MCP servers appear as Parents like packages; tools come from `list-capabilities` (`source: "mcp-server"`). Disabled or auth-pending servers stay out.
 - Omit each package's root export (`.`, `__root__`, `./`) from the Pouch. Live Kody names it `__root__`, not `.`. Named package exports remain; Mentions still include `export:` for named tools.
 - Skill display `name` and registry `id` differ (e.g. `grill-with-docs` vs `mattpocock-grill-with-docs`).
+- Package tools use `withCache` with a 5-minute maxAge. Opening can still show stale package tools; the Refresh Action clears that cache then revalidates. Last-good stays on screen during the Action; Cache rewrites only after a clean successful merge.
