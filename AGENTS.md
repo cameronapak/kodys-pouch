@@ -15,6 +15,7 @@
 - Domain language lives in `CONTEXT.md`: Pouch, Tool, Skill, Origin, Parent, Package, Scope, Mention, Active Input, Clipboard Fallback. Command, Export, Composer, and Prompt are retired.
 - A Tool is anything Kody can call. Parents: Package, Kody (built-in), MCP server, or another connected provider. Skills are documents, not Tools, and appear only if the skills package exists.
 - Missing skills package is not an error (Tools only). A failed fetch keeps what loaded (or last-good) and shows a visible error. Last-good inventory shows immediately, then refreshes in the background.
-- Discovery uses the `@cameronpak/raycast` package (kody id `raycast`) over HTTP with `source: "raycast"`. The discovery kody id preference is optional and defaults to `raycast`.
+- Discovery uses the `@cameronpak/raycast` package (kody id `raycast`) over HTTP with `source: "raycast"`: `list-packages`/`get-package` for packages, `list-capabilities` for built-ins, MCP, OpenAPI, and remote connectors. The discovery kody id preference is optional and defaults to `raycast`.
+- MCP servers appear as Parents like packages; tools come from `list-capabilities` (`source: "mcp-server"`). Disabled or auth-pending servers stay out.
 - Omit each package's root export (`.`, `__root__`, `./`) from the Pouch. Live Kody names it `__root__`, not `.`. Named package exports remain; Mentions still include `export:` for named tools.
 - Skill display `name` and registry `id` differ (e.g. `grill-with-docs` vs `mattpocock-grill-with-docs`).
