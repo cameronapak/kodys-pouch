@@ -349,6 +349,40 @@ function itemsInScope(items: Item[], scope: Scope): Item[] {
   }
 }
 
+export const PIN_LIMIT = 5;
+export const RECENT_LIMIT = 5;
+const RECENT_STORED = 50;
+
+export type PinAttempt =
+  | { ok: true; keys: string[] }
+  | { ok: false; keys: string[] };
+
+export function recordRecent(keys: string[], key: string): string[] {
+  return [key, ...keys.filter((existing) => existing !== key)].slice(
+    0,
+    RECENT_STORED,
+  );
+}
+
+export function pinItem(keys: string[], key: string): PinAttempt {
+  if (keys.includes(key)) {
+    return { ok: true, keys };
+  }
+  if (keys.length >= PIN_LIMIT) {
+    return { ok: false, keys };
+  }
+  return { ok: true, keys: [key, ...keys] };
+}
+
+export function unpinItem(keys: string[], key: string): string[] {
+  return keys.filter((existing) => existing !== key);
+}
+
+export function pruneKeys(keys: string[], items: Item[]): string[] {
+  const known = new Set(items.map(itemKey));
+  return keys.filter((key) => known.has(key));
+}
+
 export function itemKey(item: Item): string {
   if (item.kind === "skill") {
     return `skill:${item.id}`;
@@ -371,16 +405,45 @@ export function itemKey(item: Item): string {
 
 const OTHER_SKILLS = "Other Skills";
 
+export type Shelf = {
+  pinned?: string[];
+  recent?: string[];
+};
+
 export function presentPouch(
   items: Item[],
   query: string,
   scope: Scope = { type: "all" },
+  shelf: Shelf = {},
 ): PouchSection[] {
   const matched = filterItems(items, query, scope);
+  const origins = skillOrigins(items);
+  if (query.trim() !== "") {
+    return presentMatched(matched, origins, scope);
+  }
+  const pinnedItems = resolveShelfKeys(shelf.pinned ?? [], items, scope);
+  const pinnedSet = new Set(pinnedItems.map(itemKey));
+  const recentItems = resolveShelfKeys(shelf.recent ?? [], items, scope)
+    .filter((item) => !pinnedSet.has(itemKey(item)))
+    .slice(0, RECENT_LIMIT);
+  const omit = new Set([...pinnedSet, ...recentItems.map(itemKey)]);
+  const rest = matched.filter((item) => !omit.has(itemKey(item)));
+  const restSections = presentMatched(rest, origins, scope);
+  return [
+    ...shelfSection("Pinned", pinnedItems, origins, restSections),
+    ...shelfSection("Recent", recentItems, origins, restSections),
+    ...restSections,
+  ];
+}
+
+function presentMatched(
+  matched: Item[],
+  origins: Map<string, string>,
+  scope: Scope,
+): PouchSection[] {
   if (matched.length === 0) {
     return [];
   }
-  const origins = skillOrigins(items);
   switch (scope.type) {
     case "parent":
       return [flatSection(matched, origins)];
@@ -414,6 +477,47 @@ export function presentPouch(
       return _never;
     }
   }
+}
+
+function resolveShelfKeys(
+  keys: string[],
+  items: Item[],
+  scope: Scope,
+): Item[] {
+  const byKey = new Map(items.map((item) => [itemKey(item), item]));
+  const inScope = new Set(itemsInScope(items, scope).map(itemKey));
+  const resolved: Item[] = [];
+  for (const key of keys) {
+    const item = byKey.get(key);
+    if (item && inScope.has(key)) {
+      resolved.push(item);
+    }
+  }
+  return resolved;
+}
+
+function shelfSection(
+  title: string,
+  items: Item[],
+  origins: Map<string, string>,
+  rest: PouchSection[],
+): PouchSection[] {
+  if (items.length === 0) {
+    return [];
+  }
+  const restIsFlat =
+    rest.length < 2 || rest.every((section) => section.title === null);
+  return [
+    {
+      title,
+      rows: items.map((item) => ({
+        item,
+        subtitle: restIsFlat
+          ? flatSubtitle(item, origins)
+          : descriptionLine(item),
+      })),
+    },
+  ];
 }
 
 function rowSubtitle(item: Item): string {

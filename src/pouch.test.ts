@@ -9,9 +9,14 @@ import {
   formatMention,
   isRootExport,
   mergeInventory,
+  itemKey,
+  pinItem,
   presentPouch,
+  pruneKeys,
+  recordRecent,
   rowTitle,
   scopeOptions,
+  unpinItem,
   type Item,
   type Scope,
 } from "./pouch.ts";
@@ -91,8 +96,13 @@ const groupedInventory: Item[] = [
   packageList,
 ];
 
-function presented(items: Item[], query = "", scope: Scope = { type: "all" }) {
-  return presentPouch(items, query, scope).map((section) => ({
+function presented(
+  items: Item[],
+  query = "",
+  scope: Scope = { type: "all" },
+  shelf?: { pinned?: string[]; recent?: string[] },
+) {
+  return presentPouch(items, query, scope, shelf).map((section) => ({
     title: section.title,
     names: section.rows.map((row) => row.item.name),
     subtitles: section.rows.map((row) => row.subtitle),
@@ -813,4 +823,188 @@ test("Scope options still omit Origin", () => {
     "macro",
     "skills",
   ]);
+});
+
+test("a pick prepends Recent and moves a repeat to the front", () => {
+  const first = recordRecent([], itemKey(grill));
+  const second = recordRecent(first, itemKey(skillGet));
+  const again = recordRecent(second, itemKey(grill));
+  assert.deepEqual(first, ["skill:mattpocock-grill-with-docs"]);
+  assert.deepEqual(second, [
+    "package:skills:skill-get",
+    "skill:mattpocock-grill-with-docs",
+  ]);
+  assert.deepEqual(again, [
+    "skill:mattpocock-grill-with-docs",
+    "package:skills:skill-get",
+  ]);
+});
+
+test("five Tool Pins still refuse a Skill Pin", () => {
+  const fiveTools = [
+    itemKey(skillGet),
+    itemKey(listSkills),
+    itemKey(packageList),
+    itemKey(canvaExport),
+    "mcp:other:Other",
+  ];
+  assert.deepEqual(pinItem(fiveTools, itemKey(grill)), {
+    ok: false,
+    keys: fiveTools,
+  });
+});
+
+test("Pin prepends and a sixth Pin refuses without changing keys", () => {
+  const keys = [
+    itemKey(grill),
+    itemKey(tdd),
+    itemKey(showMe),
+    itemKey(recap),
+    itemKey(skillGet),
+  ];
+  const refused = pinItem(keys, itemKey(listSkills));
+  assert.deepEqual(refused, { ok: false, keys });
+  const first = pinItem([], itemKey(grill));
+  const second = pinItem(first.keys, itemKey(skillGet));
+  assert.deepEqual(first, {
+    ok: true,
+    keys: ["skill:mattpocock-grill-with-docs"],
+  });
+  assert.deepEqual(second, {
+    ok: true,
+    keys: ["package:skills:skill-get", "skill:mattpocock-grill-with-docs"],
+  });
+  const already = pinItem(second.keys, itemKey(grill));
+  assert.deepEqual(already, second);
+});
+
+test("unresolved keys drop so a new Pin is not blocked by ghosts", () => {
+  const gone = "skill:gone-skill";
+  const ghosts = [
+    gone,
+    itemKey(grill),
+    itemKey(tdd),
+    itemKey(showMe),
+    itemKey(recap),
+  ];
+  const live = pruneKeys(ghosts, groupedInventory);
+  assert.deepEqual(live, [
+    itemKey(grill),
+    itemKey(tdd),
+    itemKey(showMe),
+    itemKey(recap),
+  ]);
+  const next = pinItem(live, itemKey(skillGet));
+  assert.deepEqual(next, {
+    ok: true,
+    keys: [itemKey(skillGet), ...live],
+  });
+});
+
+test("Unpin removes a Pin and leaves Recent keys alone", () => {
+  const pinned = [
+    "package:skills:skill-get",
+    "skill:mattpocock-grill-with-docs",
+  ];
+  const recent = [
+    "skill:mattpocock-grill-with-docs",
+    "package:skills:skill-get",
+  ];
+  assert.deepEqual(unpinItem(pinned, itemKey(grill)), [
+    "package:skills:skill-get",
+  ]);
+  assert.deepEqual(recent, [
+    "skill:mattpocock-grill-with-docs",
+    "package:skills:skill-get",
+  ]);
+});
+
+test("empty query shows Pinned then Recent then today's groups", () => {
+  const titles = presented(groupedInventory, "", { type: "all" }, {
+    pinned: [itemKey(skillGet)],
+    recent: [itemKey(grill), itemKey(skillGet)],
+  }).map((section) => ({ title: section.title, names: section.names }));
+  assert.deepEqual(titles, [
+    { title: "Pinned", names: ["skill-get"] },
+    { title: "Recent", names: ["grill-with-docs"] },
+    { title: "mattpocock", names: ["tdd"] },
+    { title: "Other Skills", names: ["show-me", "visual-recap"] },
+    { title: "Kody", names: ["package_list"] },
+    { title: "macro", names: ["ListSkills"] },
+  ]);
+});
+
+test("search omits Pinned and Recent even when those items match", () => {
+  const titles = presented(groupedInventory, "grill", { type: "all" }, {
+    pinned: [itemKey(grill)],
+    recent: [itemKey(grill)],
+  }).map((section) => section.title);
+  assert.deepEqual(titles, [null]);
+});
+
+test("Skills Scope hides pinned Tools and still fills Recents", () => {
+  const titles = presented(groupedInventory, "", { type: "skills" }, {
+    pinned: [itemKey(skillGet), itemKey(grill)],
+    recent: [itemKey(tdd), itemKey(skillGet), itemKey(showMe)],
+  }).map((section) => ({ title: section.title, names: section.names }));
+  assert.deepEqual(titles, [
+    { title: "Pinned", names: ["grill-with-docs"] },
+    { title: "Recent", names: ["tdd", "show-me"] },
+    { title: null, names: ["visual-recap"] },
+  ]);
+});
+
+test("Recent fills five unpinned rows and drops unresolved keys", () => {
+  const extra: Item = {
+    kind: "skill",
+    name: "gone",
+    id: "gone-skill",
+    description: "Left inventory",
+  };
+  const titles = presented(groupedInventory, "", { type: "all" }, {
+    pinned: [itemKey(grill), itemKey(extra)],
+    recent: [
+      itemKey(extra),
+      itemKey(grill),
+      itemKey(tdd),
+      itemKey(showMe),
+      itemKey(recap),
+      itemKey(skillGet),
+      itemKey(listSkills),
+      itemKey(packageList),
+    ],
+  }).map((section) => ({ title: section.title, names: section.names }));
+  assert.deepEqual(titles[0], { title: "Pinned", names: ["grill-with-docs"] });
+  assert.deepEqual(titles[1], {
+    title: "Recent",
+    names: [
+      "tdd",
+      "show-me",
+      "visual-recap",
+      "skill-get",
+      "ListSkills",
+    ],
+  });
+});
+
+test("unpinning restores a still-Recent item to Recent", () => {
+  const titles = presented(groupedInventory, "", { type: "all" }, {
+    pinned: [],
+    recent: [itemKey(grill), itemKey(skillGet)],
+  }).map((section) => ({ title: section.title, names: section.names }));
+  assert.equal(titles[0]?.title, "Recent");
+  assert.deepEqual(titles[0]?.names, ["grill-with-docs", "skill-get"]);
+});
+
+test("Pinned and Recent stay visible when the rest is flat", () => {
+  assert.deepEqual(
+    presented([grill, tdd], "", { type: "skills" }, {
+      pinned: [itemKey(grill)],
+      recent: [itemKey(tdd)],
+    }).map((section) => ({ title: section.title, names: section.names })),
+    [
+      { title: "Pinned", names: ["grill-with-docs"] },
+      { title: "Recent", names: ["tdd"] },
+    ],
+  );
 });

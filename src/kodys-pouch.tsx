@@ -1,15 +1,31 @@
-import { Action, ActionPanel, Cache, Color, Icon, Keyboard, List } from "@raycast/api";
+import {
+  Action,
+  ActionPanel,
+  Cache,
+  Color,
+  Icon,
+  Keyboard,
+  List,
+  LocalStorage,
+  Toast,
+  showToast,
+} from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { clearPackageToolsCache, loadSkills, loadTools } from "./kody";
 import {
+  PIN_LIMIT,
   emptyState,
   formatMention,
   itemKey,
+  pinItem,
+  pruneKeys,
+  recordRecent,
   rowTitle,
   mergeInventory,
   presentPouch,
   scopeOptions,
+  unpinItem,
   withoutRootExports,
   type Item,
   type MergedPouch,
@@ -19,6 +35,9 @@ import {
   type Scope,
   type ScopeOption,
 } from "./pouch";
+
+const PINNED_STORAGE_KEY = "pouch-pinned";
+const RECENT_STORAGE_KEY = "pouch-recent";
 
 const inventoryCache = new Cache();
 const INVENTORY_CACHE_KEY = "pouch-inventory";
@@ -40,13 +59,15 @@ const initialPouch = readCachedPouch();
 export default function KodyPouch() {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState<Scope>({ type: "all" });
+  const [pinned, setPinned] = useState<string[]>([]);
+  const [recent, setRecent] = useState<string[]>([]);
   const { data, isLoading, revalidate } = useCachedPromise(loadPouch, [], {
     initialData: initialPouch,
     keepPreviousData: true,
   });
   const pouch = data ?? { items: [], errors: [] };
   const options = scopeOptions(pouch.items);
-  const sections = presentPouch(pouch.items, query, scope);
+  const sections = presentPouch(pouch.items, query, scope, { pinned, recent });
   const empty = emptyState({
     items: pouch.items,
     query,
@@ -54,9 +75,59 @@ export default function KodyPouch() {
     errors: pouch.errors,
     isLoading,
   });
+  useEffect(() => {
+    void (async () => {
+      const [pinnedRaw, recentRaw] = await Promise.all([
+        LocalStorage.getItem<string>(PINNED_STORAGE_KEY),
+        LocalStorage.getItem<string>(RECENT_STORAGE_KEY),
+      ]);
+      setPinned(parseKeys(pinnedRaw));
+      setRecent(parseKeys(recentRaw));
+    })();
+  }, []);
   const onRefresh = () => {
     clearPackageToolsCache();
     revalidate();
+  };
+  useEffect(() => {
+    if (pouch.items.length === 0) {
+      return;
+    }
+    const nextPinned = pruneKeys(pinned, pouch.items);
+    const nextRecent = pruneKeys(recent, pouch.items);
+    if (nextPinned.length !== pinned.length) {
+      setPinned(nextPinned);
+      void LocalStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(nextPinned));
+    }
+    if (nextRecent.length !== recent.length) {
+      setRecent(nextRecent);
+      void LocalStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(nextRecent));
+    }
+  }, [pouch.items, pinned, recent]);
+  const onPick = (item: Item) => {
+    const next = recordRecent(pruneKeys(recent, pouch.items), itemKey(item));
+    setRecent(next);
+    void LocalStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(next));
+  };
+  const onTogglePin = (item: Item) => {
+    const key = itemKey(item);
+    const live = pruneKeys(pinned, pouch.items);
+    if (live.includes(key)) {
+      const next = unpinItem(live, key);
+      setPinned(next);
+      void LocalStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(next));
+      return;
+    }
+    const result = pinItem(live, key);
+    if (!result.ok) {
+      void showToast({
+        style: Toast.Style.Failure,
+        title: `Pin limit is ${PIN_LIMIT}. Unpin one first.`,
+      });
+      return;
+    }
+    setPinned(result.keys);
+    void LocalStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(result.keys));
   };
 
   return (
@@ -77,6 +148,10 @@ export default function KodyPouch() {
         <PouchSectionRows
           key={section.title ?? "flat"}
           section={section}
+          pinned={pinned}
+          showPinAccessory={section.title === "Pinned"}
+          onPick={onPick}
+          onTogglePin={onTogglePin}
           onRefresh={onRefresh}
         />
       ))}
@@ -87,13 +162,29 @@ export default function KodyPouch() {
 
 function PouchSectionRows({
   section,
+  pinned,
+  showPinAccessory,
+  onPick,
+  onTogglePin,
   onRefresh,
 }: {
   section: PouchSection;
+  pinned: string[];
+  showPinAccessory: boolean;
+  onPick: (item: Item) => void;
+  onTogglePin: (item: Item) => void;
   onRefresh: () => void;
 }) {
   const rows = section.rows.map((row) => (
-    <PouchItem key={itemKey(row.item)} row={row} onRefresh={onRefresh} />
+    <PouchItem
+      key={itemKey(row.item)}
+      row={row}
+      pinned={pinned.includes(itemKey(row.item))}
+      showPinAccessory={showPinAccessory}
+      onPick={onPick}
+      onTogglePin={onTogglePin}
+      onRefresh={onRefresh}
+    />
   ));
   if (section.title === null) {
     return <>{rows}</>;
@@ -103,24 +194,44 @@ function PouchSectionRows({
 
 function PouchItem({
   row,
+  pinned,
+  showPinAccessory,
+  onPick,
+  onTogglePin,
   onRefresh,
 }: {
   row: PouchRow;
+  pinned: boolean;
+  showPinAccessory: boolean;
+  onPick: (item: Item) => void;
+  onTogglePin: (item: Item) => void;
   onRefresh: () => void;
 }) {
   const mention = formatMention(row.item);
   return (
     <List.Item
+      id={itemKey(row.item)}
       icon={{
         source: row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver,
         tintColor: Color.SecondaryText,
       }}
       title={rowTitle(row.item)}
       subtitle={row.subtitle}
+      accessories={showPinAccessory ? [{ icon: Icon.Pin }] : undefined}
       actions={
         <ActionPanel>
-          <Action.Paste title="Paste Mention" content={mention} />
+          <Action.Paste
+            title="Paste Mention"
+            content={mention}
+            onPaste={() => onPick(row.item)}
+          />
           <Action.CopyToClipboard title="Copy Mention" content={mention} />
+          <Action
+            title={pinned ? "Unpin" : "Pin"}
+            icon={Icon.Pin}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "p" }}
+            onAction={() => onTogglePin(row.item)}
+          />
           <RefreshPouchAction onRefresh={onRefresh} />
         </ActionPanel>
       }
@@ -256,6 +367,20 @@ function PouchEmpty({
       const _never: never = state;
       return _never;
     }
+  }
+}
+
+function parseKeys(raw: string | undefined): string[] {
+  if (!raw) {
+    return [];
+  }
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.every((key) => typeof key === "string")
+      ? parsed
+      : [];
+  } catch {
+    return [];
   }
 }
 

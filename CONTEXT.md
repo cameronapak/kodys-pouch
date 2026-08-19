@@ -36,6 +36,14 @@ _Avoid_: app, plugin
 Which slice of the Pouch is visible: All, Skills, Tools, or one Parent that has Tools. Skills and Tools are always options. Search matches inside the current Scope. Opening the Pouch starts at All.
 _Avoid_: Filter, Agent, category, a saved preference
 
+**Recent**:
+A pick that is not a Pin, shown in a Recent section when the query is empty. The section holds up to 5. Honors Scope. Unpinning restores the item here if it is still Recent.
+_Avoid_: favorite, history, selected item, last used
+
+**Pin**:
+A user-marked item that stays in a Pinned section above Recent until unpinned. At most 5 across the Pouch, not per Scope. Newest pin first. Pinning is not a pick.
+_Avoid_: favorite, bookmark, star
+
 **Mention**:
 A one-line Pouch reference written only when a row is picked. Closing the Pouch writes nothing. Skill: `/name (Kody skill_get id: <id>)`. Package Tool: `$name (Kody invoke kodyId: <id> export: <export>)`. Built-in Tool: `$name (Kody <capability>)`. MCP Tool: `$name (Kody mcp <server> <tool>)`. Other Tools: same one-line pattern. Not the body.
 _Avoid_: stub, inline skill, bare name, multi-line mention, Prompt
