@@ -163,8 +163,8 @@ export async function loadTools() {
 export async function loadSkills() {
   try {
     const result = await invokeKodyExport<SkillItem[]>({
-      kodyId: "skills",
-      exportName: "skill-list",
+      kodyId: getPrefs().discoveryKodyId,
+      exportName: "list-skills",
       params: {},
     });
     if (!Array.isArray(result)) {
