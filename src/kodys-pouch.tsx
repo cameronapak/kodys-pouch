@@ -38,6 +38,8 @@ import {
 
 const PINNED_STORAGE_KEY = "pouch-pinned";
 const RECENT_STORAGE_KEY = "pouch-recent";
+const pinIcon = { source: "pin.svg", tintColor: Color.SecondaryText };
+const pinActionIcon = { source: "pin.svg", tintColor: Color.PrimaryText };
 
 const inventoryCache = new Cache();
 const INVENTORY_CACHE_KEY = "pouch-inventory";
@@ -217,7 +219,7 @@ function PouchItem({
       }}
       title={rowTitle(row.item)}
       subtitle={row.subtitle}
-      accessories={showPinAccessory ? [{ icon: Icon.Pin }] : undefined}
+      accessories={showPinAccessory ? [{ icon: pinIcon }] : undefined}
       actions={
         <ActionPanel>
           <Action.Paste
@@ -228,7 +230,7 @@ function PouchItem({
           <Action.CopyToClipboard title="Copy Mention" content={mention} />
           <Action
             title={pinned ? "Unpin" : "Pin"}
-            icon={Icon.Pin}
+            icon={pinActionIcon}
             shortcut={{ modifiers: ["cmd", "shift"], key: "p" }}
             onAction={() => onTogglePin(row.item)}
           />
