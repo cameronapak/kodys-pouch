@@ -85,6 +85,6 @@
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
-    "test": "node --experimental-strip-types --test src/pouch.test.ts"
+    "test": "node --experimental-strip-types --import ./test/register-raycast-stubs.mjs --test src/*.test.ts"
   }
 }
