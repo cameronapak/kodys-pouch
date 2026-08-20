@@ -1,8 +1,12 @@
 # Kody's Pouch
 
-Raycast window into Kody's Pouch. Search Tools and Skills. Pick one to paste a Mention into the Active Input. If there is no Active Input, the Mention is copied.
+Your Kody Skills and Tools, one command away.
 
-Kody is the source of truth. This extension does not read disk skills or write stubs.
+Kody is the source of truth for your Skills and Tools. Coding harnesses do not list them, so the editor has no autocomplete. You talk to an agent, which means you only reach what you already remember to ask for.
+
+The Pouch makes that inventory visible. Open one Raycast command, search, and paste a Mention or Skill Contents into the Active Input. If there is no Active Input, the Mention is copied.
+
+This extension does not read disk skills or write stubs.
 
 ![Kody's Pouch](assets/demo.gif)
 

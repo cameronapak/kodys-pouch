@@ -1,6 +1,6 @@
 # Kody's Pouch
 
-The one Raycast command for Kody's Pouch. The Pouch holds Tools and Skills. Selecting one pastes a Mention into the Active Input. Kody is the source of truth.
+The one Raycast command that makes Kody's Tools and Skills visible. The Pouch holds Tools and Skills. Selecting one pastes a Mention into the Active Input. Kody is the source of truth.
 
 ## Language
 
