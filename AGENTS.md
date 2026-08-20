@@ -10,7 +10,7 @@ Keep this file brief. Put task-specific guidance behind a pointer.
 - Package tools stay behind a 5-minute `withCache`. Refresh Pouch (⌘R) clears it then revalidates; last-good stays on screen.
 - Pins and Recents live in LocalStorage, not last-good Cache. Refresh Pouch revalidates inventory only.
 - Root exports (`.`, `__root__`, `./`) stay out of the Pouch. Live Kody names the root `__root__`.
-- Discovery invokes the `raycast` package over HTTP with `source: "raycast"`.
+- Discovery invokes the Discovery Package (`raycast-kodys-pouch`) over HTTP with `source: "raycast"`.
 - Data: Raycast `useCachedPromise` + `Cache`, not TanStack Query.
 
 ## Guardrails
@@ -21,3 +21,7 @@ Keep this file brief. Put task-specific guidance behind a pointer.
 
 Domain terms or Mention shape: read `CONTEXT.md`.
 Recent, Pin, or empty-query layout: read `docs/recent-and-pin.md`.
+
+## Learned Workspace Facts
+
+- A package invocation token belongs to one package. Skill Contents load through the Discovery Package `get-skill` export, not `skills/skill-get`.

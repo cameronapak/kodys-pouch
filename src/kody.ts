@@ -61,7 +61,7 @@ function getPrefs(): Prefs {
   const prefs = getPreferenceValues<Prefs & { discoveryKodyId?: string }>();
   return {
     ...prefs,
-    discoveryKodyId: prefs.discoveryKodyId?.trim() || "raycast",
+    discoveryKodyId: prefs.discoveryKodyId?.trim() || "raycast-kodys-pouch",
   };
 }
 
@@ -191,8 +191,8 @@ export async function loadSkills() {
 export async function fetchSkillDocument(id: string) {
   try {
     const result = await invokeKodyExport<unknown>({
-      kodyId: "skills",
-      exportName: "skill-get",
+      kodyId: getPrefs().discoveryKodyId,
+      exportName: "get-skill",
       params: { id },
     });
     const markdown = skillDocumentFromPayload(result);
@@ -230,6 +230,23 @@ export function skillDocumentFromPayload(payload: unknown): string | null {
         return value;
       }
     }
+  }
+  if (Array.isArray(record.files)) {
+    const contents = new Map<string, string>();
+    for (const file of record.files) {
+      if (file === null || typeof file !== "object") {
+        continue;
+      }
+      const { path, content } = file as Record<string, unknown>;
+      if (typeof path === "string" && typeof content === "string") {
+        contents.set(path, content);
+      }
+    }
+    const markdown =
+      contents.get("SKILL.md") ??
+      [...contents.values()].find((content) => content.trim() !== "") ??
+      null;
+    return markdown;
   }
   const skill = record.skill;
   if (skill !== null && typeof skill === "object") {

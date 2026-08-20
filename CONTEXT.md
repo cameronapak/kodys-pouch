@@ -32,6 +32,18 @@ _Avoid_: owner, source, namespace
 A Kody package the user can browse and invoke. A Package is one kind of Parent.
 _Avoid_: app, plugin
 
+**Discovery Package**:
+The Kody Package the Pouch calls with one invocation token to load Tools, Skills, and Skill Contents. It exists for people who install the Pouch. It is a dedicated Package (`kody.id` `raycast-kodys-pouch`) published as a Community Listing. Installers fork that Listing, publish their copy, and mint their own token. The author's fork of Kent's `raycast` listing is hidden.
+_Avoid_: official package, Kent's raycast, the fork as the product, `raycast` as this Package's id, shared host
+
+**Community**:
+The public catalog of published packages on this deployment.
+_Avoid_: official catalog, live link to the author's copy
+
+**Listing**:
+A pinned snapshot of a published Package in Community. Not a live link to the author's private copy. Re-publishing updates the snapshot to the current published commit. A fork of a Listing is inert until the owner reviews and publishes it.
+_Avoid_: live package, shared host, the author's running copy
+
 **Scope**:
 Which slice of the Pouch is visible: All, Skills, Tools, or one Parent that has Tools. Skills and Tools are always options. Search matches inside the current Scope. Opening the Pouch starts at All.
 _Avoid_: Filter, Agent, category, a saved preference

@@ -1,0 +1,3 @@
+# Pouch owns a dedicated Discovery Package listing
+
+The Pouch needs one invocation token that can load Tools, Skills, and Skill Contents. Kent's `raycast` listing is a generic launcher kit, and a token belongs to one Package, so a fork of that listing is the wrong product identity. Publish `@cameronpak/raycast-kodys-pouch` (`kody.id` `raycast-kodys-pouch`) as a Community Listing: a pinned snapshot installers fork, publish, and token themselves. The extension default discovery id matches. After the author migrates, retire the `raycast` fork. Contents load through Discovery Package `get-skill`, not `skills/skill-get`.

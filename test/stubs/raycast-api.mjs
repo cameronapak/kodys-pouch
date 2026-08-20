@@ -4,7 +4,7 @@ export function getPreferenceValues() {
       baseUrl: "https://kody.codes",
       username: "testuser",
       token: "test-token",
-      discoveryKodyId: "raycast",
+      discoveryKodyId: "raycast-kodys-pouch",
     }
   );
 }

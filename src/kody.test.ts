@@ -13,8 +13,8 @@ test("loadSkills requests discoveryKodyId/list-skills not skills/skill-list", as
   await loadSkills();
 
   assert.ok(
-    urls.some((url) => url.includes("/raycast/list-skills")),
-    `expected raycast/list-skills, got: ${urls.join(", ")}`,
+    urls.some((url) => url.includes("/raycast-kodys-pouch/list-skills")),
+    `expected raycast-kodys-pouch/list-skills, got: ${urls.join(", ")}`,
   );
   assert.ok(
     !urls.some((url) => url.includes("/skills/skill-list")),
@@ -22,7 +22,7 @@ test("loadSkills requests discoveryKodyId/list-skills not skills/skill-list", as
   );
 });
 
-test("fetchSkillDocument requests skills/skill-get by id", async () => {
+test("fetchSkillDocument requests discoveryKodyId/get-skill by id", async () => {
   const urls: string[] = [];
   const bodies: unknown[] = [];
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -56,8 +56,12 @@ Body`,
     );
   }
   assert.ok(
-    urls.some((url) => url.includes("/skills/skill-get")),
-    `expected skills/skill-get, got: ${urls.join(", ")}`,
+    urls.some((url) => url.includes("/raycast-kodys-pouch/get-skill")),
+    `expected raycast-kodys-pouch/get-skill, got: ${urls.join(", ")}`,
+  );
+  assert.ok(
+    !urls.some((url) => url.includes("/skills/skill-get")),
+    `must not call skills/skill-get, got: ${urls.join(", ")}`,
   );
   assert.ok(
     bodies.some(
@@ -70,6 +74,49 @@ Body`,
     ),
     `expected params.id, got: ${JSON.stringify(bodies)}`,
   );
+});
+
+test("fetchSkillDocument extracts SKILL.md from the files array", async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        result: {
+          id: "x",
+          name: "x",
+          files: [
+            { path: "ATTRIBUTION.md", content: "by someone" },
+            { path: "SKILL.md", content: "---\nname: x\n---\n\nBody" },
+          ],
+        },
+      }),
+      { status: 200 },
+    );
+  const { fetchSkillDocument } = await import("./kody.ts");
+  const ok = await fetchSkillDocument("x");
+  assert.equal(ok.status, "ok");
+  if (ok.status === "ok") {
+    assert.equal(ok.value, "---\nname: x\n---\n\nBody");
+  }
+});
+
+test("fetchSkillDocument falls back to the only file when SKILL.md is absent", async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        result: {
+          id: "x",
+          name: "x",
+          files: [{ path: "notes.md", content: "Notes" }],
+        },
+      }),
+      { status: 200 },
+    );
+  const { fetchSkillDocument } = await import("./kody.ts");
+  const ok = await fetchSkillDocument("x");
+  assert.equal(ok.status, "ok");
+  if (ok.status === "ok") {
+    assert.equal(ok.value, "Notes");
+  }
 });
 
 test("fetchSkillDocument normalizes content field and fails on empty", async () => {
