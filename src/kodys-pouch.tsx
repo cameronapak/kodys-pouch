@@ -2,20 +2,28 @@ import {
   Action,
   ActionPanel,
   Cache,
+  Clipboard,
   Color,
   Icon,
   Keyboard,
   List,
   LocalStorage,
   Toast,
+  closeMainWindow,
   showToast,
 } from "@raycast/api";
 import { useCachedPromise } from "@raycast/utils";
 import { useEffect, useState } from "react";
-import { clearPackageToolsCache, loadSkills, loadTools } from "./kody";
+import {
+  clearPackageToolsCache,
+  fetchSkillDocument,
+  loadSkills,
+  loadTools,
+} from "./kody";
 import {
   PIN_LIMIT,
   emptyState,
+  formatContents,
   formatMention,
   itemKey,
   pinItem,
@@ -34,6 +42,7 @@ import {
   type PouchSection,
   type Scope,
   type ScopeOption,
+  type SkillItem,
 } from "./pouch";
 
 const PINNED_STORAGE_KEY = "pouch-pinned";
@@ -210,11 +219,13 @@ function PouchItem({
   onRefresh: () => void;
 }) {
   const mention = formatMention(row.item);
+  const skill = row.item.kind === "skill" ? row.item : null;
   return (
     <List.Item
       id={itemKey(row.item)}
       icon={{
-        source: row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver,
+        source:
+          row.item.kind === "skill" ? Icon.Document : Icon.WrenchScrewdriver,
         tintColor: Color.SecondaryText,
       }}
       title={rowTitle(row.item)}
@@ -227,7 +238,20 @@ function PouchItem({
             content={mention}
             onPaste={() => onPick(row.item)}
           />
+          {skill ? (
+            <Action
+              title="Paste Contents"
+              shortcut={{ modifiers: ["shift"], key: "return" }}
+              onAction={() => void pasteSkillContents(skill, onPick)}
+            />
+          ) : null}
           <Action.CopyToClipboard title="Copy Mention" content={mention} />
+          {skill ? (
+            <Action
+              title="Copy Contents"
+              onAction={() => void copySkillContents(skill)}
+            />
+          ) : null}
           <Action
             title={pinned ? "Unpin" : "Pin"}
             icon={pinActionIcon}
@@ -239,6 +263,43 @@ function PouchItem({
       }
     />
   );
+}
+
+async function loadSkillContents(skill: SkillItem): Promise<string | null> {
+  const toast = await showToast({
+    style: Toast.Style.Animated,
+    title: "Loading Contents…",
+  });
+  const loaded = await fetchSkillDocument(skill.id);
+  if (loaded.status !== "ok") {
+    toast.style = Toast.Style.Failure;
+    toast.title = "Could not load Contents";
+    toast.message = loaded.error.message;
+    return null;
+  }
+  await toast.hide();
+  return formatContents(skill.name, loaded.value);
+}
+
+async function pasteSkillContents(
+  skill: SkillItem,
+  onPick: (item: Item) => void,
+) {
+  const contents = await loadSkillContents(skill);
+  if (contents === null) {
+    return;
+  }
+  await Clipboard.paste(contents);
+  onPick(skill);
+  await closeMainWindow();
+}
+
+async function copySkillContents(skill: SkillItem) {
+  const contents = await loadSkillContents(skill);
+  if (contents === null) {
+    return;
+  }
+  await Clipboard.copy(contents);
 }
 
 function RefreshPouchAction({ onRefresh }: { onRefresh: () => void }) {
@@ -351,7 +412,10 @@ function PouchEmpty({
     case "no-match":
       return (
         <List.EmptyView
-          icon={{ source: Icon.MagnifyingGlass, tintColor: Color.SecondaryText }}
+          icon={{
+            source: Icon.MagnifyingGlass,
+            tintColor: Color.SecondaryText,
+          }}
           title={state.title}
           actions={actions}
         />
@@ -378,7 +442,8 @@ function parseKeys(raw: string | undefined): string[] {
   }
   try {
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.every((key) => typeof key === "string")
+    return Array.isArray(parsed) &&
+      parsed.every((key) => typeof key === "string")
       ? parsed
       : [];
   } catch {

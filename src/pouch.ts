@@ -171,6 +171,14 @@ export function formatMention(item: Item): string {
   }
 }
 
+export function formatContents(name: string, markdown: string): string {
+  return `Follow this Skill:
+
+\`\`\`\`md title="${name}.md"
+${markdown}
+\`\`\`\``;
+}
+
 export function parentLabel(item: Item): string {
   if (item.kind === "skill") {
     return "";
@@ -354,8 +362,7 @@ export const RECENT_LIMIT = 5;
 const RECENT_STORED = 50;
 
 export type PinAttempt =
-  | { ok: true; keys: string[] }
-  | { ok: false; keys: string[] };
+  { ok: true; keys: string[] } | { ok: false; keys: string[] };
 
 export function recordRecent(keys: string[], key: string): string[] {
   return [key, ...keys.filter((existing) => existing !== key)].slice(
@@ -479,11 +486,7 @@ function presentMatched(
   }
 }
 
-function resolveShelfKeys(
-  keys: string[],
-  items: Item[],
-  scope: Scope,
-): Item[] {
+function resolveShelfKeys(keys: string[], items: Item[], scope: Scope): Item[] {
   const byKey = new Map(items.map((item) => [itemKey(item), item]));
   const inScope = new Set(itemsInScope(items, scope).map(itemKey));
   const resolved: Item[] = [];
