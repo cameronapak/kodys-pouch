@@ -6,6 +6,7 @@ import {
   SkillsMissing,
   emptyState,
   filterItems,
+  formatContents,
   formatMention,
   isRootExport,
   mergeInventory,
@@ -123,6 +124,58 @@ test("Skill Mention keeps name and id distinct", () => {
       description: "Grill a plan",
     }),
     "/grill-with-docs (Kody skill_get id: mattpocock-grill-with-docs)",
+  );
+});
+
+test("formatContents wraps full Skill markdown in lead-in and four-backtick fence", () => {
+  const markdown = `---
+name: grill-with-docs
+description: Grill a plan
+---
+
+# Grill
+
+Use a \`\`\`ts
+const x = 1;
+\`\`\` block inside.`;
+  const contents = formatContents("grill-with-docs", markdown);
+  assert.equal(
+    contents,
+    `Follow this Skill:
+
+\`\`\`\`md title="grill-with-docs.md"
+---
+name: grill-with-docs
+description: Grill a plan
+---
+
+# Grill
+
+Use a \`\`\`ts
+const x = 1;
+\`\`\` block inside.
+\`\`\`\``,
+  );
+  assert.ok(!contents.includes("mattpocock-grill-with-docs"));
+  assert.ok(!contents.includes('title="SKILL.md"'));
+});
+
+test("formatContents lengthens the outer fence past nested four-backtick runs", () => {
+  const markdown = `See
+\`\`\`\`md
+inner
+\`\`\`\``;
+  const contents = formatContents("nested", markdown);
+  assert.equal(
+    contents,
+    `Follow this Skill:
+
+\`\`\`\`\`md title="nested.md"
+See
+\`\`\`\`md
+inner
+\`\`\`\`
+\`\`\`\`\``,
   );
 });
 
@@ -920,10 +973,15 @@ test("Unpin removes a Pin and leaves Recent keys alone", () => {
 });
 
 test("empty query shows Pinned then Recent then today's groups", () => {
-  const titles = presented(groupedInventory, "", { type: "all" }, {
-    pinned: [itemKey(skillGet)],
-    recent: [itemKey(grill), itemKey(skillGet)],
-  }).map((section) => ({ title: section.title, names: section.names }));
+  const titles = presented(
+    groupedInventory,
+    "",
+    { type: "all" },
+    {
+      pinned: [itemKey(skillGet)],
+      recent: [itemKey(grill), itemKey(skillGet)],
+    },
+  ).map((section) => ({ title: section.title, names: section.names }));
   assert.deepEqual(titles, [
     { title: "Pinned", names: ["skill-get"] },
     { title: "Recent", names: ["grill-with-docs"] },
@@ -935,18 +993,28 @@ test("empty query shows Pinned then Recent then today's groups", () => {
 });
 
 test("search omits Pinned and Recent even when those items match", () => {
-  const titles = presented(groupedInventory, "grill", { type: "all" }, {
-    pinned: [itemKey(grill)],
-    recent: [itemKey(grill)],
-  }).map((section) => section.title);
+  const titles = presented(
+    groupedInventory,
+    "grill",
+    { type: "all" },
+    {
+      pinned: [itemKey(grill)],
+      recent: [itemKey(grill)],
+    },
+  ).map((section) => section.title);
   assert.deepEqual(titles, [null]);
 });
 
 test("Skills Scope hides pinned Tools and still fills Recents", () => {
-  const titles = presented(groupedInventory, "", { type: "skills" }, {
-    pinned: [itemKey(skillGet), itemKey(grill)],
-    recent: [itemKey(tdd), itemKey(skillGet), itemKey(showMe)],
-  }).map((section) => ({ title: section.title, names: section.names }));
+  const titles = presented(
+    groupedInventory,
+    "",
+    { type: "skills" },
+    {
+      pinned: [itemKey(skillGet), itemKey(grill)],
+      recent: [itemKey(tdd), itemKey(skillGet), itemKey(showMe)],
+    },
+  ).map((section) => ({ title: section.title, names: section.names }));
   assert.deepEqual(titles, [
     { title: "Pinned", names: ["grill-with-docs"] },
     { title: "Recent", names: ["tdd", "show-me"] },
@@ -961,47 +1029,56 @@ test("Recent fills five unpinned rows and drops unresolved keys", () => {
     id: "gone-skill",
     description: "Left inventory",
   };
-  const titles = presented(groupedInventory, "", { type: "all" }, {
-    pinned: [itemKey(grill), itemKey(extra)],
-    recent: [
-      itemKey(extra),
-      itemKey(grill),
-      itemKey(tdd),
-      itemKey(showMe),
-      itemKey(recap),
-      itemKey(skillGet),
-      itemKey(listSkills),
-      itemKey(packageList),
-    ],
-  }).map((section) => ({ title: section.title, names: section.names }));
+  const titles = presented(
+    groupedInventory,
+    "",
+    { type: "all" },
+    {
+      pinned: [itemKey(grill), itemKey(extra)],
+      recent: [
+        itemKey(extra),
+        itemKey(grill),
+        itemKey(tdd),
+        itemKey(showMe),
+        itemKey(recap),
+        itemKey(skillGet),
+        itemKey(listSkills),
+        itemKey(packageList),
+      ],
+    },
+  ).map((section) => ({ title: section.title, names: section.names }));
   assert.deepEqual(titles[0], { title: "Pinned", names: ["grill-with-docs"] });
   assert.deepEqual(titles[1], {
     title: "Recent",
-    names: [
-      "tdd",
-      "show-me",
-      "visual-recap",
-      "skill-get",
-      "ListSkills",
-    ],
+    names: ["tdd", "show-me", "visual-recap", "skill-get", "ListSkills"],
   });
 });
 
 test("unpinning restores a still-Recent item to Recent", () => {
-  const titles = presented(groupedInventory, "", { type: "all" }, {
-    pinned: [],
-    recent: [itemKey(grill), itemKey(skillGet)],
-  }).map((section) => ({ title: section.title, names: section.names }));
+  const titles = presented(
+    groupedInventory,
+    "",
+    { type: "all" },
+    {
+      pinned: [],
+      recent: [itemKey(grill), itemKey(skillGet)],
+    },
+  ).map((section) => ({ title: section.title, names: section.names }));
   assert.equal(titles[0]?.title, "Recent");
   assert.deepEqual(titles[0]?.names, ["grill-with-docs", "skill-get"]);
 });
 
 test("Pinned and Recent stay visible when the rest is flat", () => {
   assert.deepEqual(
-    presented([grill, tdd], "", { type: "skills" }, {
-      pinned: [itemKey(grill)],
-      recent: [itemKey(tdd)],
-    }).map((section) => ({ title: section.title, names: section.names })),
+    presented(
+      [grill, tdd],
+      "",
+      { type: "skills" },
+      {
+        pinned: [itemKey(grill)],
+        recent: [itemKey(tdd)],
+      },
+    ).map((section) => ({ title: section.title, names: section.names })),
     [
       { title: "Pinned", names: ["grill-with-docs"] },
       { title: "Recent", names: ["tdd"] },

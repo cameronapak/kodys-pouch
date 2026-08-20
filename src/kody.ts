@@ -188,6 +188,56 @@ export async function loadSkills() {
   }
 }
 
+export async function fetchSkillDocument(id: string) {
+  try {
+    const result = await invokeKodyExport<unknown>({
+      kodyId: "skills",
+      exportName: "skill-get",
+      params: { id },
+    });
+    const markdown = skillDocumentFromPayload(result);
+    if (markdown === null) {
+      return Result.err(
+        new LoadFailed({ message: "Skill document was empty" }),
+      );
+    }
+    return Result.ok(markdown);
+  } catch (error) {
+    return Result.err(new LoadFailed({ message: publicMessage(error) }));
+  }
+}
+
+export function skillDocumentFromPayload(payload: unknown): string | null {
+  if (typeof payload === "string") {
+    const trimmed = payload.trim();
+    return trimmed === "" ? null : payload;
+  }
+  if (payload === null || typeof payload !== "object") {
+    return null;
+  }
+  const record = payload as Record<string, unknown>;
+  for (const key of [
+    "content",
+    "markdown",
+    "text",
+    "body",
+    "document",
+  ] as const) {
+    const value = record[key];
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed !== "") {
+        return value;
+      }
+    }
+  }
+  const skill = record.skill;
+  if (skill !== null && typeof skill === "object") {
+    return skillDocumentFromPayload(skill);
+  }
+  return null;
+}
+
 async function loadCapabilities(): Promise<ToolItem[]> {
   try {
     const result = await invokeKodyExport<{
