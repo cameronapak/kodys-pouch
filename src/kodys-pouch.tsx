@@ -289,7 +289,16 @@ async function pasteSkillContents(
   if (contents === null) {
     return;
   }
-  await Clipboard.paste(contents);
+  try {
+    await Clipboard.paste(contents);
+  } catch (error) {
+    await showToast({
+      style: Toast.Style.Failure,
+      title: "Could not paste Contents",
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
   onPick(skill);
   await closeMainWindow();
 }
@@ -299,7 +308,15 @@ async function copySkillContents(skill: SkillItem) {
   if (contents === null) {
     return;
   }
-  await Clipboard.copy(contents);
+  try {
+    await Clipboard.copy(contents);
+  } catch (error) {
+    await showToast({
+      style: Toast.Style.Failure,
+      title: "Could not copy Contents",
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 function RefreshPouchAction({ onRefresh }: { onRefresh: () => void }) {

@@ -160,6 +160,25 @@ const x = 1;
   assert.ok(!contents.includes('title="SKILL.md"'));
 });
 
+test("formatContents lengthens the outer fence past nested four-backtick runs", () => {
+  const markdown = `See
+\`\`\`\`md
+inner
+\`\`\`\``;
+  const contents = formatContents("nested", markdown);
+  assert.equal(
+    contents,
+    `Follow this Skill:
+
+\`\`\`\`\`md title="nested.md"
+See
+\`\`\`\`md
+inner
+\`\`\`\`
+\`\`\`\`\``,
+  );
+});
+
 test("Package Tool Mention names invoke kodyId and export", () => {
   assert.equal(
     formatMention({

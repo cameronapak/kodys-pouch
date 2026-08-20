@@ -49,8 +49,8 @@ A one-line Pouch reference written by Paste Mention (or Copy Mention). Closing t
 _Avoid_: stub, inline skill, bare name, multi-line mention, Prompt, Contents
 
 **Contents**:
-The Skill instruction document pasted into the Active Input instead of a Mention. Skills only. Tool rows have no Contents action. Shape: one lead-in line (`Follow this Skill:`), then a four-backtick fenced block tagged `md title="{name}.md"` whose body is the full Skill markdown including YAML frontmatter. `{name}` is the Skill display name.
-_Avoid_: Mention, body, stub, inline skill, Tool payload, three-backtick outer fence, Kody id in the title, bare SKILL.md title
+The Skill instruction document pasted into the Active Input instead of a Mention. Skills only. Tool rows have no Contents action. Shape: one lead-in line (`Follow this Skill:`), then a fenced block tagged `md title="{name}.md"` whose body is the full Skill markdown including YAML frontmatter. The outer fence uses at least four backticks, and one more than the longest backtick run inside the Skill so nested fences stay intact. `{name}` is the Skill display name.
+_Avoid_: Mention, body, stub, inline skill, Tool payload, fixed three-backtick outer fence, Kody id in the title, bare SKILL.md title
 
 **Active Input**:
 The text field that had focus before Raycast opened. A pick pastes the Mention or Contents at the caret (or over the selection), like a normal paste. It does not replace the whole field.

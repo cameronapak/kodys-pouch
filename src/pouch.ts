@@ -172,11 +172,16 @@ export function formatMention(item: Item): string {
 }
 
 export function formatContents(name: string, markdown: string): string {
+  let fenceLen = 4;
+  for (const [run] of markdown.matchAll(/`+/g)) {
+    fenceLen = Math.max(fenceLen, run.length + 1);
+  }
+  const fence = "`".repeat(fenceLen);
   return `Follow this Skill:
 
-\`\`\`\`md title="${name}.md"
+${fence}md title="${name}.md"
 ${markdown}
-\`\`\`\``;
+${fence}`;
 }
 
 export function parentLabel(item: Item): string {
