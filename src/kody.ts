@@ -61,7 +61,7 @@ function getPrefs(): Prefs {
   const prefs = getPreferenceValues<Prefs & { discoveryKodyId?: string }>();
   return {
     ...prefs,
-    discoveryKodyId: prefs.discoveryKodyId?.trim() || "raycast",
+    discoveryKodyId: prefs.discoveryKodyId?.trim() || "raycast-kodys-pouch",
   };
 }
 

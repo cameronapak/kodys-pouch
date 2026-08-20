@@ -60,10 +60,10 @@
     {
       "name": "discoveryKodyId",
       "title": "Discovery package kody id",
-      "description": "Package used to list packages and load export metadata. Defaults to raycast.",
+      "description": "Discovery Package kody id. Defaults to raycast-kodys-pouch.",
       "type": "textfield",
       "required": false,
-      "default": "raycast"
+      "default": "raycast-kodys-pouch"
     }
   ],
   "dependencies": {

@@ -13,8 +13,8 @@ test("loadSkills requests discoveryKodyId/list-skills not skills/skill-list", as
   await loadSkills();
 
   assert.ok(
-    urls.some((url) => url.includes("/raycast/list-skills")),
-    `expected raycast/list-skills, got: ${urls.join(", ")}`,
+    urls.some((url) => url.includes("/raycast-kodys-pouch/list-skills")),
+    `expected raycast-kodys-pouch/list-skills, got: ${urls.join(", ")}`,
   );
   assert.ok(
     !urls.some((url) => url.includes("/skills/skill-list")),
@@ -56,8 +56,8 @@ Body`,
     );
   }
   assert.ok(
-    urls.some((url) => url.includes("/raycast/get-skill")),
-    `expected raycast/get-skill, got: ${urls.join(", ")}`,
+    urls.some((url) => url.includes("/raycast-kodys-pouch/get-skill")),
+    `expected raycast-kodys-pouch/get-skill, got: ${urls.join(", ")}`,
   );
   assert.ok(
     !urls.some((url) => url.includes("/skills/skill-get")),
