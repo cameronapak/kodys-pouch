@@ -231,6 +231,23 @@ export function skillDocumentFromPayload(payload: unknown): string | null {
       }
     }
   }
+  if (Array.isArray(record.files)) {
+    const contents = new Map<string, string>();
+    for (const file of record.files) {
+      if (file === null || typeof file !== "object") {
+        continue;
+      }
+      const { path, content } = file as Record<string, unknown>;
+      if (typeof path === "string" && typeof content === "string") {
+        contents.set(path, content);
+      }
+    }
+    const markdown =
+      contents.get("SKILL.md") ??
+      [...contents.values()].find((content) => content.trim() !== "") ??
+      null;
+    return markdown;
+  }
   const skill = record.skill;
   if (skill !== null && typeof skill === "object") {
     return skillDocumentFromPayload(skill);

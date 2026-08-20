@@ -72,6 +72,49 @@ Body`,
   );
 });
 
+test("fetchSkillDocument extracts SKILL.md from the files array", async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        result: {
+          id: "x",
+          name: "x",
+          files: [
+            { path: "ATTRIBUTION.md", content: "by someone" },
+            { path: "SKILL.md", content: "---\nname: x\n---\n\nBody" },
+          ],
+        },
+      }),
+      { status: 200 },
+    );
+  const { fetchSkillDocument } = await import("./kody.ts");
+  const ok = await fetchSkillDocument("x");
+  assert.equal(ok.status, "ok");
+  if (ok.status === "ok") {
+    assert.equal(ok.value, "---\nname: x\n---\n\nBody");
+  }
+});
+
+test("fetchSkillDocument falls back to the only file when SKILL.md is absent", async () => {
+  globalThis.fetch = async () =>
+    new Response(
+      JSON.stringify({
+        result: {
+          id: "x",
+          name: "x",
+          files: [{ path: "notes.md", content: "Notes" }],
+        },
+      }),
+      { status: 200 },
+    );
+  const { fetchSkillDocument } = await import("./kody.ts");
+  const ok = await fetchSkillDocument("x");
+  assert.equal(ok.status, "ok");
+  if (ok.status === "ok") {
+    assert.equal(ok.value, "Notes");
+  }
+});
+
 test("fetchSkillDocument normalizes content field and fails on empty", async () => {
   globalThis.fetch = async () =>
     new Response(
