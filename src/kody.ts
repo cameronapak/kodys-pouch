@@ -191,8 +191,8 @@ export async function loadSkills() {
 export async function fetchSkillDocument(id: string) {
   try {
     const result = await invokeKodyExport<unknown>({
-      kodyId: "skills",
-      exportName: "skill-get",
+      kodyId: getPrefs().discoveryKodyId,
+      exportName: "get-skill",
       params: { id },
     });
     const markdown = skillDocumentFromPayload(result);

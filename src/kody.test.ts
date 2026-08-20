@@ -22,7 +22,7 @@ test("loadSkills requests discoveryKodyId/list-skills not skills/skill-list", as
   );
 });
 
-test("fetchSkillDocument requests skills/skill-get by id", async () => {
+test("fetchSkillDocument requests discoveryKodyId/get-skill by id", async () => {
   const urls: string[] = [];
   const bodies: unknown[] = [];
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -56,8 +56,12 @@ Body`,
     );
   }
   assert.ok(
-    urls.some((url) => url.includes("/skills/skill-get")),
-    `expected skills/skill-get, got: ${urls.join(", ")}`,
+    urls.some((url) => url.includes("/raycast/get-skill")),
+    `expected raycast/get-skill, got: ${urls.join(", ")}`,
+  );
+  assert.ok(
+    !urls.some((url) => url.includes("/skills/skill-get")),
+    `must not call skills/skill-get, got: ${urls.join(", ")}`,
   );
   assert.ok(
     bodies.some(
