@@ -14,6 +14,8 @@ This extension does not read disk skills or write stubs.
 
 The Pouch calls a Discovery Package with one invocation token. Installers own their copy. Do not use someone else's token.
 
+Skills require a published `skills` Package in your account. Fork https://kody.codes/@kentcdodds/skills, then privately publish your copy. If that Package is missing, the Pouch still shows Tools.
+
 1. Fork the Listing: [kody.codes/@cameronpak/raycast-kodys-pouch](https://kody.codes/@cameronpak/raycast-kodys-pouch)
 2. Review the fork, then publish it. A fork cannot be invoked until it is published.
 3. On **your** published copy, create a token (any export on that Package). Do not paste the token into chat.
