@@ -161,7 +161,7 @@ export function rowTitle(item: Item): string {
 export function formatMention(item: Item): string {
   switch (item.kind) {
     case "skill":
-      return `${item.name} skill (use Kody MCP to execute skill_get with id: ${item.id})`;
+      return `${item.name} skill (use Kody MCP to call execute skill_get('${item.id}'))`;
     case "tool":
       return formatToolMention(item);
     default: {
@@ -661,13 +661,13 @@ function descriptionLine(item: Item): string {
 function formatToolMention(item: ToolItem): string {
   switch (item.parentKind) {
     case "package":
-      return `${item.name} tool (use Kody MCP to execute kodyId: ${item.kodyId} export: ${item.exportName})`;
+      return `${item.name} tool (use Kody MCP to call execute kodyId: ${item.kodyId} export: ${item.exportName})`;
     case "kody":
-      return `${item.name} tool (use Kody MCP to execute ${item.capability})`;
+      return `${item.name} tool (use Kody MCP to call execute ${item.capability})`;
     case "mcp":
-      return `${item.name} tool (use Kody MCP to execute ${item.server} ${item.tool})`;
+      return `${item.name} tool (use Kody MCP to call execute ${item.server} ${item.tool})`;
     case "other":
-      return `${item.name} tool (use Kody MCP to execute ${item.provider} ${item.ref})`;
+      return `${item.name} tool (use Kody MCP to call execute ${item.provider} ${item.ref})`;
     default: {
       const _never: never = item;
       return _never;
