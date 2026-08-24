@@ -57,8 +57,8 @@ A user-marked item that stays in a Pinned section above Recent until unpinned. A
 _Avoid_: favorite, bookmark, star
 
 **Mention**:
-A one-line Pouch reference written by Paste Mention (or Copy Mention). Closing the Pouch writes nothing. Skill: `/name (Kody skill_get id: <id>)`. Package Tool: `$name (Kody invoke kodyId: <id> export: <export>)`. Built-in Tool: `$name (Kody <capability>)`. MCP Tool: `$name (Kody mcp <server> <tool>)`. Other Tools: same one-line pattern. Not the Contents.
-_Avoid_: stub, inline skill, bare name, multi-line mention, Prompt, Contents
+A one-line Pouch reference written by Paste Mention (or Copy Mention). Closing the Pouch writes nothing. Skill: `name skill (use Kody MCP to execute skill_get with id: <id>)`. Package Tool: `name tool (use Kody MCP to execute kodyId: <id> export: <export>)`. Built-in Tool: `name tool (use Kody MCP to execute <capability>)`. MCP Tool: `name tool (use Kody MCP to execute <server> <tool>)`. Other Tools: `name tool (use Kody MCP to execute <provider> <ref>)`. Not the Contents.
+_Avoid_: stub, inline skill, bare name, `/name`, `$name`, multi-line mention, Prompt, Contents
 
 **Contents**:
 The Skill instruction document pasted into the Active Input instead of a Mention. Skills only. Tool rows have no Contents action. Shape: one lead-in line (`Follow this Skill:`), then a fenced block tagged `md title="{name}.md"` whose body is the full Skill markdown including YAML frontmatter. The outer fence uses at least four backticks, and one more than the longest backtick run inside the Skill so nested fences stay intact. `{name}` is the Skill display name.
