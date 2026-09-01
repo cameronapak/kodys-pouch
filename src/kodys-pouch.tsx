@@ -15,7 +15,7 @@ import {
 import { useCachedPromise } from "@raycast/utils";
 import { useEffect, useState } from "react";
 import {
-  clearPackageToolsCache,
+  clearCatalogCaches,
   fetchSkillDocument,
   loadSkills,
   loadTools,
@@ -97,7 +97,7 @@ export default function KodyPouch() {
     })();
   }, []);
   const onRefresh = () => {
-    clearPackageToolsCache();
+    clearCatalogCaches();
     revalidate();
   };
   useEffect(() => {

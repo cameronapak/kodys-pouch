@@ -114,6 +114,8 @@ async function invokeKodyExport<T>({
   return (body.result ?? body.data ?? body.output ?? body) as T;
 }
 
+const CATALOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 const fetchPackageTools = withCache(
   async (): Promise<PackageTool[]> => {
     const packages = await invokeKodyExport<{ packages: KodyPackage[] }>({
@@ -143,17 +145,53 @@ const fetchPackageTools = withCache(
         })),
     );
   },
-  { maxAge: 5 * 60 * 1000, validate: Array.isArray },
+  { maxAge: CATALOG_MAX_AGE_MS, validate: Array.isArray },
 );
 
-export function clearPackageToolsCache() {
+const fetchSkills = withCache(
+  async (): Promise<SkillItem[]> => {
+    const result = await invokeKodyExport<SkillItem[]>({
+      kodyId: getPrefs().discoveryKodyId,
+      exportName: "list-skills",
+      params: {},
+    });
+    if (!Array.isArray(result)) {
+      throw new Error("Skill list was not an array");
+    }
+    return result.map((skill) => ({
+      kind: "skill" as const,
+      name: skill.name,
+      id: skill.id,
+      description: skill.description ?? "",
+    }));
+  },
+  { maxAge: CATALOG_MAX_AGE_MS, validate: Array.isArray },
+);
+
+const fetchCapabilities = withCache(
+  async (): Promise<ToolItem[]> => {
+    const result = await invokeKodyExport<{
+      capabilities?: CapabilityRecord[];
+    }>({
+      kodyId: getPrefs().discoveryKodyId,
+      exportName: "list-capabilities",
+      params: {},
+    });
+    return (result.capabilities ?? []).map(capabilityToItem);
+  },
+  { maxAge: CATALOG_MAX_AGE_MS, validate: Array.isArray },
+);
+
+export function clearCatalogCaches() {
   fetchPackageTools.clearCache();
+  fetchSkills.clearCache();
+  fetchCapabilities.clearCache();
 }
 
 export async function loadTools() {
   try {
     const packageTools = await fetchPackageTools();
-    const extra = await loadCapabilities();
+    const extra = await fetchCapabilities();
     return Result.ok([...packageTools, ...extra]);
   } catch (error) {
     return Result.err(new LoadFailed({ message: publicMessage(error) }));
@@ -162,24 +200,7 @@ export async function loadTools() {
 
 export async function loadSkills() {
   try {
-    const result = await invokeKodyExport<SkillItem[]>({
-      kodyId: getPrefs().discoveryKodyId,
-      exportName: "list-skills",
-      params: {},
-    });
-    if (!Array.isArray(result)) {
-      return Result.err(
-        new LoadFailed({ message: "Skill list was not an array" }),
-      );
-    }
-    return Result.ok(
-      result.map((skill) => ({
-        kind: "skill" as const,
-        name: skill.name,
-        id: skill.id,
-        description: skill.description ?? "",
-      })),
-    );
+    return Result.ok(await fetchSkills());
   } catch (error) {
     if (isMissingPackage(error)) {
       return Result.err(new SkillsMissing({ message: publicMessage(error) }));
@@ -253,21 +274,6 @@ export function skillDocumentFromPayload(payload: unknown): string | null {
     return skillDocumentFromPayload(skill);
   }
   return null;
-}
-
-async function loadCapabilities(): Promise<ToolItem[]> {
-  try {
-    const result = await invokeKodyExport<{
-      capabilities?: CapabilityRecord[];
-    }>({
-      kodyId: getPrefs().discoveryKodyId,
-      exportName: "list-capabilities",
-      params: {},
-    });
-    return (result.capabilities ?? []).map(capabilityToItem);
-  } catch {
-    return [];
-  }
 }
 
 function capabilityToItem(cap: CapabilityRecord): ToolItem {

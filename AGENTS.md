@@ -7,7 +7,7 @@ Keep this file brief. Put task-specific guidance behind a pointer.
 ## Gotchas
 
 - Last-good: missing skills package is Tools-only, not an error. A failed fetch keeps last-good and shows a visible error. Last-good paints immediately, then refreshes. Cache rewrites only after a clean merge.
-- Package tools stay behind a 5-minute `withCache`. Refresh Pouch (⌘R) clears it then revalidates; last-good stays on screen.
+- Catalog lists (list-skills, list-capabilities, package-tools) stay behind a 7-day `withCache`. Refresh Pouch (⌘R) clears all three then revalidates; last-good stays on screen.
 - Pins and Recents live in LocalStorage, not last-good Cache. Refresh Pouch revalidates inventory only.
 - Root exports (`.`, `__root__`, `./`) stay out of the Pouch. Live Kody names the root `__root__`.
 - Discovery invokes the Discovery Package (`raycast-kodys-pouch`) over HTTP with `source: "raycast"`.
