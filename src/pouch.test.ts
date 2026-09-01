@@ -526,6 +526,16 @@ test("Tools fetch fail keeps Skills and flags an error", () => {
   assert.deepEqual(merged.errors, ["tools down"]);
 });
 
+test("Tools fail with last-good keeps last-good tools and successful Skills", () => {
+  const merged = mergeInventory({
+    tools: Result.err(new LoadFailed({ message: "tools down" })),
+    skills: Result.ok([grill]),
+    lastGood: [grill, skillGet, packageList],
+  });
+  assert.deepEqual(merged.items, [skillGet, packageList, grill]);
+  assert.deepEqual(merged.errors, ["tools down"]);
+});
+
 test("Tools fail and Skills missing with last-good keeps last-good", () => {
   const merged = mergeInventory({
     tools: Result.err(new LoadFailed({ message: "tools down" })),

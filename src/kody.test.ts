@@ -164,7 +164,7 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status });
 }
 
-function stubCatalogFetch() {
+function stubCatalogFetch(options: { failCapabilities?: boolean } = {}) {
   const posts: RecordedPost[] = [];
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
@@ -190,6 +190,9 @@ function stubCatalogFetch() {
       });
     }
     if (exportName === "list-capabilities") {
+      if (options.failCapabilities) {
+        return jsonResponse({ error: "down" }, 500);
+      }
       return jsonResponse({
         result: {
           capabilities: [
@@ -257,6 +260,18 @@ const skillGet: Item = {
   kodyId: "skills",
   exportName: "skill-get",
 };
+
+const packageList: Item = {
+  kind: "tool",
+  parentKind: "kody",
+  name: "package_list",
+  description: "List saved packages",
+  capability: "package_list",
+};
+
+function wouldWriteLastGood(merged: { items: Item[]; errors: string[] }) {
+  return merged.errors.length === 0 && merged.items.length > 0;
+}
 
 test("warm catalog does not POST skills, capabilities, or package-tools", async () => {
   const { loadSkills, loadTools, clearCatalogCaches } =
@@ -342,6 +357,40 @@ test("Refresh POSTs the three lists again and leaves last-good, pins, and recent
   });
   assert.deepEqual(pruneKeys(pinned, refreshed.items), pinned);
   assert.deepEqual(pruneKeys(recent, refreshed.items), recent);
+});
+
+test("failed capabilities after Refresh keep last-good tools and capability pins", async () => {
+  const { loadSkills, loadTools, clearCatalogCaches } =
+    await import("./kody.ts");
+  clearCatalogCaches();
+  stubCatalogFetch();
+  const [tools, skills] = await Promise.all([loadTools(), loadSkills()]);
+  const lastGood = mergeInventory({ tools, skills }).items;
+  assert.equal(
+    lastGood.some((item) => itemKey(item) === itemKey(packageList)),
+    true,
+  );
+  const pinned = [itemKey(packageList)];
+  assert.deepEqual(pruneKeys(pinned, lastGood), pinned);
+
+  clearCatalogCaches();
+  stubCatalogFetch({ failCapabilities: true });
+  const [failedTools, refreshedSkills] = await Promise.all([
+    loadTools(),
+    loadSkills(),
+  ]);
+  assert.equal(failedTools.status, "error");
+  const merged = mergeInventory({
+    tools: failedTools,
+    skills: refreshedSkills,
+    lastGood,
+  });
+  assert.equal(wouldWriteLastGood(merged), false);
+  assert.equal(
+    merged.items.some((item) => itemKey(item) === itemKey(packageList)),
+    true,
+  );
+  assert.deepEqual(pruneKeys(pinned, merged.items), pinned);
 });
 
 test("failed fetch after Refresh keeps last-good catalog", async () => {

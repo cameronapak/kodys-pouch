@@ -191,7 +191,7 @@ export function clearCatalogCaches() {
 export async function loadTools() {
   try {
     const packageTools = await fetchPackageTools();
-    const extra = await loadCapabilities();
+    const extra = await fetchCapabilities();
     return Result.ok([...packageTools, ...extra]);
   } catch (error) {
     return Result.err(new LoadFailed({ message: publicMessage(error) }));
@@ -274,14 +274,6 @@ export function skillDocumentFromPayload(payload: unknown): string | null {
     return skillDocumentFromPayload(skill);
   }
   return null;
-}
-
-async function loadCapabilities(): Promise<ToolItem[]> {
-  try {
-    return await fetchCapabilities();
-  } catch {
-    return [];
-  }
 }
 
 function capabilityToItem(cap: CapabilityRecord): ToolItem {

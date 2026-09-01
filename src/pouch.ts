@@ -125,6 +125,19 @@ export function mergeInventory(input: {
   ) {
     return { items: withoutRootExports(input.lastGood), errors };
   }
+  if (
+    input.tools.status !== "ok" &&
+    input.lastGood &&
+    input.lastGood.length > 0
+  ) {
+    const lastGoodTools = input.lastGood.filter(
+      (item): item is ToolItem => item.kind === "tool",
+    );
+    return {
+      items: withoutRootExports([...lastGoodTools, ...skills]),
+      errors,
+    };
+  }
 
   return { items, errors };
 }
