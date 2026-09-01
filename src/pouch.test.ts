@@ -123,7 +123,7 @@ test("Skill Mention keeps name and id distinct", () => {
       id: "mattpocock-grill-with-docs",
       description: "Grill a plan",
     }),
-    "grill-with-docs skill (use Kody MCP to call execute skill_get('mattpocock-grill-with-docs'))",
+    "grill-with-docs skill (use Kody MCP to execute skill_get with id: mattpocock-grill-with-docs)",
   );
 });
 
@@ -189,7 +189,7 @@ test("Package Tool Mention names invoke kodyId and export", () => {
       kodyId: "skills",
       exportName: "skill-get",
     }),
-    "skill-get tool (use Kody MCP to call execute kodyId: skills export: skill-get)",
+    "skill-get tool (use Kody MCP to execute kodyId: skills export: skill-get)",
   );
 });
 
@@ -246,7 +246,7 @@ test("Built-in Tool Mention names the capability", () => {
       description: "List saved packages",
       capability: "package_list",
     }),
-    "package_list tool (use Kody MCP to call execute package_list)",
+    "package_list tool (use Kody MCP to execute package_list)",
   );
 });
 
@@ -260,7 +260,7 @@ test("MCP Tool Mention names server and tool", () => {
       server: "macro",
       tool: "ListSkills",
     }),
-    "ListSkills tool (use Kody MCP to call execute macro ListSkills)",
+    "ListSkills tool (use Kody MCP to execute macro ListSkills)",
   );
 });
 
@@ -274,7 +274,7 @@ test("Other Tool Mention follows the same one-line pattern", () => {
       provider: "openapi",
       ref: "canva createdesignexportjob",
     }),
-    "createdesignexportjob tool (use Kody MCP to call execute openapi canva createdesignexportjob)",
+    "createdesignexportjob tool (use Kody MCP to execute openapi canva createdesignexportjob)",
   );
 });
 
