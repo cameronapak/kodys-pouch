@@ -14,7 +14,7 @@ This extension does not read disk skills or write stubs.
 
 The Pouch calls a Discovery Package with one invocation token. Installers own their copy. Do not use someone else's token.
 
-Skills require a published `skills` Package in your account. Fork https://kody.codes/@kentcdodds/skills, then privately publish your copy. If that Package is missing, the Pouch still shows Tools.
+The Skills list loads from a published `skills` Package in your account: fork https://kody.codes/@kentcdodds/skills, then privately publish your copy. Skill Contents load through your Discovery Package fork's `get-skill` export, so one token reaches both. If the `skills` Package is missing, the Pouch still shows Tools.
 
 1. Fork the Listing: [kody.codes/@cameronpak/raycast-kodys-pouch](https://kody.codes/@cameronpak/raycast-kodys-pouch)
 2. Review the fork, then publish it. A fork cannot be invoked until it is published.
@@ -29,4 +29,6 @@ If you already forked Kent's `raycast` listing for the Pouch, fork this Listing 
 
 ## Use
 
-Open **Kody's Pouch**. Type to filter. Pick a row. The Mention pastes at the caret. Use Copy Mention for the clipboard. Skills also offer Paste Contents.
+Open **Kody's Pouch**. Type to filter, or narrow the Scope dropdown to Skills, Tools, or one Parent. Pick a row. The Mention pastes at the caret. Use Copy Mention or Copy Contents for the clipboard. Skills also offer Paste Contents (⇧↩).
+
+Pin a row with ⌘⇧P to keep it in a Pinned section above Recent. Refresh Pouch (⌘R) revalidates the inventory.
