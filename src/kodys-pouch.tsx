@@ -19,6 +19,7 @@ import {
   fetchSkillDocument,
   loadSkills,
   loadTools,
+  skillGetImportSpec,
 } from "./kody";
 import {
   PIN_LIMIT,
@@ -218,7 +219,9 @@ function PouchItem({
   onTogglePin: (item: Item) => void;
   onRefresh: () => void;
 }) {
-  const mention = formatMention(row.item);
+  const mention = formatMention(row.item, {
+    skillGetImport: skillGetImportSpec(),
+  });
   const skill = row.item.kind === "skill" ? row.item : null;
   return (
     <List.Item

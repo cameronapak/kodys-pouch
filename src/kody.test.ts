@@ -24,6 +24,28 @@ test("loadSkills requests discoveryKodyId/list-skills not skills/skill-list", as
   );
 });
 
+test("skillGetImportSpec scopes the discovery fork under the pref username", async () => {
+  const { skillGetImportSpec } = await import("./kody.ts");
+  globalThis.__KODY_TEST_PREFS__ = {
+    baseUrl: "https://kody.codes",
+    username: "janedoe",
+    token: "test-token",
+    discoveryKodyId: "raycast-kodys-pouch",
+  };
+  assert.equal(
+    skillGetImportSpec(),
+    "kody:@janedoe/raycast-kodys-pouch/get-skill",
+  );
+  globalThis.__KODY_TEST_PREFS__ = {
+    baseUrl: "https://kody.codes",
+    username: "janedoe",
+    token: "test-token",
+    discoveryKodyId: "@janedoe/pouch-fork",
+  };
+  assert.equal(skillGetImportSpec(), "kody:@janedoe/pouch-fork/get-skill");
+  delete globalThis.__KODY_TEST_PREFS__;
+});
+
 test("fetchSkillDocument requests discoveryKodyId/get-skill by id", async () => {
   const urls: string[] = [];
   const bodies: unknown[] = [];

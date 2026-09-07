@@ -171,10 +171,17 @@ export function rowTitle(item: Item): string {
   }
 }
 
-export function formatMention(item: Item): string {
+export type MentionOptions = {
+  skillGetImport?: string;
+};
+
+export function formatMention(
+  item: Item,
+  options: MentionOptions = {},
+): string {
   switch (item.kind) {
     case "skill":
-      return `${item.name} skill (use Kody MCP to execute skill_get with id: ${item.id})`;
+      return formatSkillMention(item, options.skillGetImport);
     case "tool":
       return formatToolMention(item);
     default: {
@@ -669,6 +676,14 @@ function flatSubtitle(item: Item, origins: Map<string, string>): string {
 
 function descriptionLine(item: Item): string {
   return item.description.split("\n")[0] ?? "";
+}
+
+const DEFAULT_SKILL_GET_IMPORT = "kody:@cameronpak/skills/skill-get";
+
+function formatSkillMention(item: SkillItem, skillGetImport?: string): string {
+  const importer = skillGetImport ?? DEFAULT_SKILL_GET_IMPORT;
+  const lead = item.description.trim();
+  return `${item.name} skill${lead === "" ? "" : ` — ${lead}`} (Load via Kody MCP execute only: \`import skillGet from '${importer}'\` (default export), then \`await skillGet({ id: '${item.id}' })\`. Read \`files\`, find path \`SKILL.md\`, follow its content.)`;
 }
 
 function formatToolMention(item: ToolItem): string {

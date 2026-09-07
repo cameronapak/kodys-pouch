@@ -115,7 +115,7 @@ test("row titles prefix Skills with / and Tools with $", () => {
   assert.equal(rowTitle(skillGet), "$skill-get");
 });
 
-test("Skill Mention keeps name and id distinct", () => {
+test("Skill Mention keeps name and id distinct and carries the load recipe", () => {
   assert.equal(
     formatMention({
       kind: "skill",
@@ -123,7 +123,37 @@ test("Skill Mention keeps name and id distinct", () => {
       id: "mattpocock-grill-with-docs",
       description: "Grill a plan",
     }),
-    "grill-with-docs skill (use Kody MCP to execute skill_get with id: mattpocock-grill-with-docs)",
+    "grill-with-docs skill — Grill a plan (Load via Kody MCP execute only: `import skillGet from 'kody:@cameronpak/skills/skill-get'` (default export), then `await skillGet({ id: 'mattpocock-grill-with-docs' })`. Read `files`, find path `SKILL.md`, follow its content.)",
+  );
+});
+
+test("Skill Mention with no description still reads cleanly", () => {
+  const mention = formatMention({
+    kind: "skill",
+    name: "bro",
+    id: "cursor-bro",
+    description: "",
+  });
+  assert.equal(
+    mention,
+    "bro skill (Load via Kody MCP execute only: `import skillGet from 'kody:@cameronpak/skills/skill-get'` (default export), then `await skillGet({ id: 'cursor-bro' })`. Read `files`, find path `SKILL.md`, follow its content.)",
+  );
+});
+
+test("Skill Mention uses the caller's discovery fork when given", () => {
+  const mention = formatMention(
+    {
+      kind: "skill",
+      name: "bro",
+      id: "cursor-bro",
+      description:
+        "Restate the last message in plain human language, with no jargon.",
+    },
+    { skillGetImport: "kody:@janedoe/raycast-kodys-pouch/get-skill" },
+  );
+  assert.equal(
+    mention,
+    "bro skill — Restate the last message in plain human language, with no jargon. (Load via Kody MCP execute only: `import skillGet from 'kody:@janedoe/raycast-kodys-pouch/get-skill'` (default export), then `await skillGet({ id: 'cursor-bro' })`. Read `files`, find path `SKILL.md`, follow its content.)",
   );
 });
 

@@ -182,6 +182,14 @@ const fetchCapabilities = withCache(
   { maxAge: CATALOG_MAX_AGE_MS, validate: Array.isArray },
 );
 
+export function skillGetImportSpec(): string {
+  const { username, discoveryKodyId } = getPrefs();
+  const scoped = discoveryKodyId.startsWith("@")
+    ? discoveryKodyId
+    : `@${username}/${discoveryKodyId}`;
+  return `kody:${scoped}/get-skill`;
+}
+
 export function clearCatalogCaches() {
   fetchPackageTools.clearCache();
   fetchSkills.clearCache();
