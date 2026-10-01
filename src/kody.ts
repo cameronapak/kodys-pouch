@@ -11,16 +11,33 @@ import {
 } from "./pouch";
 
 export type Prefs = {
-  baseUrl: string;
   username: string;
-  token: string;
   discoveryKodyId: string;
+  listPackagesWebhookUrl: string;
+  getPackageWebhookUrl: string;
+  listCapabilitiesWebhookUrl: string;
+  listSkillsWebhookUrl: string;
+  getSkillWebhookUrl: string;
 };
 
-type InvocationTarget = {
-  kodyId: string;
-  exportName: string;
+type WebhookName =
+  | "list-packages"
+  | "get-package"
+  | "list-capabilities"
+  | "list-skills"
+  | "get-skill";
+
+type WebhookTarget = {
+  webhookName: WebhookName;
   params: Record<string, unknown>;
+};
+
+const webhookPreference: Record<WebhookName, keyof Prefs> = {
+  "list-packages": "listPackagesWebhookUrl",
+  "get-package": "getPackageWebhookUrl",
+  "list-capabilities": "listCapabilitiesWebhookUrl",
+  "list-skills": "listSkillsWebhookUrl",
+  "get-skill": "getSkillWebhookUrl",
 };
 
 type KodyPackage = {
@@ -78,56 +95,46 @@ function displayExportName(exportName: string): string {
   return route === "__root__" ? "." : route;
 }
 
-async function invokeKodyExport<T>({
-  kodyId,
-  exportName,
+async function invokeDiscoveryWebhook<T>({
+  webhookName,
   params = {},
-}: InvocationTarget): Promise<T> {
+}: WebhookTarget): Promise<T> {
   const prefs = getPrefs();
-  const route = toRouteExportName(exportName);
-  const path = [kodyId, ...route.split("/").filter(Boolean)]
-    .map(encodeURIComponent)
-    .join("/");
-  const base = prefs.baseUrl.replace(/\/$/, "");
-  const url = `${base}/@${encodeURIComponent(prefs.username)}/api/package-invocations/${path}`;
+  const url = prefs[webhookPreference[webhookName]].trim();
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      authorization: `Bearer ${prefs.token}`,
       "content-type": "application/json",
+      "idempotency-key": `raycast:${webhookName}:${crypto.randomUUID()}`,
     },
-    body: JSON.stringify({
-      params,
-      source: "raycast",
-      idempotencyKey: `raycast:${kodyId}:${route}:${crypto.randomUUID()}`,
-    }),
+    body: JSON.stringify(params),
   });
 
   const body = (await response.json()) as Record<string, unknown>;
   if (!response.ok) {
     throw new Error(
-      `Kody invocation failed (${response.status}): ${JSON.stringify(body)}`,
+      `Kody webhook failed (${response.status}): ${JSON.stringify(body)}`,
     );
   }
 
-  return (body.result ?? body.data ?? body.output ?? body) as T;
+  return ("result" in body ? body.result : body) as T;
 }
 
 const CATALOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const fetchPackageTools = withCache(
   async (): Promise<PackageTool[]> => {
-    const packages = await invokeKodyExport<{ packages: KodyPackage[] }>({
-      kodyId: getPrefs().discoveryKodyId,
-      exportName: "list-packages",
+    const packages = await invokeDiscoveryWebhook<{
+      packages: KodyPackage[];
+    }>({
+      webhookName: "list-packages",
       params: {},
     });
     const details = await Promise.all(
       packages.packages.map((pkg) =>
-        invokeKodyExport<GetPackageResult>({
-          kodyId: getPrefs().discoveryKodyId,
-          exportName: "get-package",
+        invokeDiscoveryWebhook<GetPackageResult>({
+          webhookName: "get-package",
           params: { packageId: pkg.packageId },
         }),
       ),
@@ -150,9 +157,8 @@ const fetchPackageTools = withCache(
 
 const fetchSkills = withCache(
   async (): Promise<SkillItem[]> => {
-    const result = await invokeKodyExport<SkillItem[]>({
-      kodyId: getPrefs().discoveryKodyId,
-      exportName: "list-skills",
+    const result = await invokeDiscoveryWebhook<SkillItem[]>({
+      webhookName: "list-skills",
       params: {},
     });
     if (!Array.isArray(result)) {
@@ -170,11 +176,10 @@ const fetchSkills = withCache(
 
 const fetchCapabilities = withCache(
   async (): Promise<ToolItem[]> => {
-    const result = await invokeKodyExport<{
+    const result = await invokeDiscoveryWebhook<{
       capabilities?: CapabilityRecord[];
     }>({
-      kodyId: getPrefs().discoveryKodyId,
-      exportName: "list-capabilities",
+      webhookName: "list-capabilities",
       params: {},
     });
     return (result.capabilities ?? []).map(capabilityToItem);
@@ -219,9 +224,8 @@ export async function loadSkills() {
 
 export async function fetchSkillDocument(id: string) {
   try {
-    const result = await invokeKodyExport<unknown>({
-      kodyId: getPrefs().discoveryKodyId,
-      exportName: "get-skill",
+    const result = await invokeDiscoveryWebhook<unknown>({
+      webhookName: "get-skill",
       params: { id },
     });
     const markdown = skillDocumentFromPayload(result);

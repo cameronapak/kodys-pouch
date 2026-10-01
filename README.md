@@ -12,18 +12,19 @@ This extension does not read disk skills or write stubs.
 
 ## Setup
 
-The Pouch calls a Discovery Package with one invocation token. Installers own their copy. Do not use someone else's token.
+The Pouch calls five inbound webhooks on a Discovery Package. Installers own their copy and webhook URLs. Treat each URL as a credential.
 
-The Skills list loads from a published `skills` Package in your account: fork https://kody.codes/@kentcdodds/skills, then privately publish your copy. Skill Contents load through your Discovery Package fork's `get-skill` export, so one token reaches both. If the `skills` Package is missing, the Pouch still shows Tools.
+The Skills list loads from a published `skills` Package in your account: fork https://kody.codes/@kentcdodds/skills, then privately publish your copy. Your Discovery Package finds that Package by `kody.id` and loads Skill Contents through `get-skill`. If the `skills` Package is missing, the Pouch still shows Tools.
 
 1. Fork the Listing: [kody.codes/@cameronpak/raycast-kodys-pouch](https://kody.codes/@cameronpak/raycast-kodys-pouch)
-2. Review the fork, then publish it. A fork cannot be invoked until it is published.
-3. On **your** published copy, create a token (any export on that Package). Do not paste the token into chat.
-4. `npm install && npm run dev`
-5. Open **Kody's Pouch** in Raycast
-6. Set preferences: base URL (`https://kody.codes`), your Kody username, your token, discovery id (`raycast-kodys-pouch`)
+2. Review the fork, then publish it. A fork cannot receive webhook calls until it is published.
+3. Open your Package settings at `https://kody.codes/@<username>/raycast-kodys-pouch/settings#webhooks`.
+4. Mint and copy the URLs for `list-packages`, `get-package`, `list-capabilities`, `list-skills`, and `get-skill`. Do not paste them into chat.
+5. `npm install && npm run dev`
+6. Open **Kody's Pouch** in Raycast.
+7. Set your username, paste each URL into its matching password preference, and keep discovery id as `raycast-kodys-pouch`.
 
-If you already forked Kent's `raycast` listing for the Pouch, fork this Listing instead and mint a new token on that copy. A token belongs to one Package.
+If you already forked Kent's `raycast` listing for the Pouch, fork this Listing instead and mint its five webhook URLs.
 
 `author` in `package.json` is a Raycast Store handle. Change it before you publish. Local `npm run dev` works without that.
 

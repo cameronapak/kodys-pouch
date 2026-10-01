@@ -35,14 +35,6 @@
   ],
   "preferences": [
     {
-      "name": "baseUrl",
-      "title": "Kody Base URL",
-      "description": "Kody origin with no trailing slash.",
-      "type": "textfield",
-      "required": true,
-      "default": "https://kody.codes"
-    },
-    {
       "name": "username",
       "title": "Username",
       "description": "Your Kody username.",
@@ -51,9 +43,37 @@
       "default": "cameronpak"
     },
     {
-      "name": "token",
-      "title": "Invocation Token",
-      "description": "Package invocation token for external Raycast calls.",
+      "name": "listPackagesWebhookUrl",
+      "title": "List Packages Webhook URL",
+      "description": "Credential URL for the Discovery Package list-packages webhook.",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "getPackageWebhookUrl",
+      "title": "Get Package Webhook URL",
+      "description": "Credential URL for the Discovery Package get-package webhook.",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "listCapabilitiesWebhookUrl",
+      "title": "List Capabilities Webhook URL",
+      "description": "Credential URL for the Discovery Package list-capabilities webhook.",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "listSkillsWebhookUrl",
+      "title": "List Skills Webhook URL",
+      "description": "Credential URL for the Discovery Package list-skills webhook.",
+      "type": "password",
+      "required": true
+    },
+    {
+      "name": "getSkillWebhookUrl",
+      "title": "Get Skill Webhook URL",
+      "description": "Credential URL for the Discovery Package get-skill webhook.",
       "type": "password",
       "required": true
     },

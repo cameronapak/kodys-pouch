@@ -2,11 +2,19 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { mergeInventory, itemKey, pruneKeys, type Item } from "./pouch.ts";
 
-test("loadSkills requests discoveryKodyId/list-skills not skills/skill-list", async () => {
-  const urls: string[] = [];
-  globalThis.fetch = async (input: RequestInfo | URL) => {
+test("loadSkills posts direct params to its webhook without bearer auth", async () => {
+  const requests: Array<{
+    url: string;
+    headers: Headers;
+    body: unknown;
+  }> = [];
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    urls.push(url);
+    requests.push({
+      url,
+      headers: new Headers(init?.headers),
+      body: JSON.parse(String(init?.body ?? "{}")),
+    });
     return new Response(JSON.stringify({ result: [] }), { status: 200 });
   };
 
@@ -14,22 +22,24 @@ test("loadSkills requests discoveryKodyId/list-skills not skills/skill-list", as
   clearCatalogCaches();
   await loadSkills();
 
-  assert.ok(
-    urls.some((url) => url.includes("/raycast-kodys-pouch/list-skills")),
-    `expected raycast-kodys-pouch/list-skills, got: ${urls.join(", ")}`,
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.url, "https://hooks.test/list-skills");
+  assert.deepEqual(requests[0]?.body, {});
+  assert.equal(requests[0]?.headers.get("authorization"), null);
+  assert.match(
+    requests[0]?.headers.get("idempotency-key") ?? "",
+    /^raycast:list-skills:/,
   );
-  assert.ok(
-    !urls.some((url) => url.includes("/skills/skill-list")),
-    `must not call skills/skill-list, got: ${urls.join(", ")}`,
+  assert.equal(
+    requests.some((request) => request.url.includes("package-invocations")),
+    false,
   );
 });
 
 test("skillGetImportSpec scopes the discovery fork under the pref username", async () => {
   const { skillGetImportSpec } = await import("./kody.ts");
   globalThis.__KODY_TEST_PREFS__ = {
-    baseUrl: "https://kody.codes",
     username: "janedoe",
-    token: "test-token",
     discoveryKodyId: "raycast-kodys-pouch",
   };
   assert.equal(
@@ -37,16 +47,14 @@ test("skillGetImportSpec scopes the discovery fork under the pref username", asy
     "kody:@janedoe/raycast-kodys-pouch/get-skill",
   );
   globalThis.__KODY_TEST_PREFS__ = {
-    baseUrl: "https://kody.codes",
     username: "janedoe",
-    token: "test-token",
     discoveryKodyId: "@janedoe/pouch-fork",
   };
   assert.equal(skillGetImportSpec(), "kody:@janedoe/pouch-fork/get-skill");
   delete globalThis.__KODY_TEST_PREFS__;
 });
 
-test("fetchSkillDocument requests discoveryKodyId/get-skill by id", async () => {
+test("fetchSkillDocument posts the id directly to the get-skill webhook", async () => {
   const urls: string[] = [];
   const bodies: unknown[] = [];
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -79,25 +87,8 @@ name: grill-with-docs
 Body`,
     );
   }
-  assert.ok(
-    urls.some((url) => url.includes("/raycast-kodys-pouch/get-skill")),
-    `expected raycast-kodys-pouch/get-skill, got: ${urls.join(", ")}`,
-  );
-  assert.ok(
-    !urls.some((url) => url.includes("/skills/skill-get")),
-    `must not call skills/skill-get, got: ${urls.join(", ")}`,
-  );
-  assert.ok(
-    bodies.some(
-      (body) =>
-        typeof body === "object" &&
-        body !== null &&
-        "params" in body &&
-        (body as { params: { id?: string } }).params.id ===
-          "mattpocock-grill-with-docs",
-    ),
-    `expected params.id, got: ${JSON.stringify(bodies)}`,
-  );
+  assert.deepEqual(urls, ["https://hooks.test/get-skill"]);
+  assert.deepEqual(bodies, [{ id: "mattpocock-grill-with-docs" }]);
 });
 
 test("fetchSkillDocument extracts SKILL.md from the files array", async () => {
@@ -178,8 +169,7 @@ type RecordedPost = {
 };
 
 function exportNameFromUrl(url: string): string {
-  const path = url.split("/package-invocations/")[1] ?? "";
-  return path.split("/").slice(1).join("/");
+  return new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "";
 }
 
 function jsonResponse(body: unknown, status = 200) {
@@ -190,15 +180,15 @@ function stubCatalogFetch(options: { failCapabilities?: boolean } = {}) {
   const posts: RecordedPost[] = [];
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
-    const body = JSON.parse(String(init?.body ?? "{}")) as {
-      params?: Record<string, unknown>;
-      idempotencyKey?: string;
-    };
+    const body = JSON.parse(String(init?.body ?? "{}")) as Record<
+      string,
+      unknown
+    >;
     const exportName = exportNameFromUrl(url);
     posts.push({
       exportName,
-      params: body.params ?? {},
-      idempotencyKey: String(body.idempotencyKey ?? ""),
+      params: body,
+      idempotencyKey: new Headers(init?.headers).get("idempotency-key") ?? "",
     });
     if (exportName === "list-skills") {
       return jsonResponse({
