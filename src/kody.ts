@@ -13,31 +13,19 @@ import {
 export type Prefs = {
   username: string;
   discoveryKodyId: string;
-  listPackagesWebhookUrl: string;
-  getPackageWebhookUrl: string;
-  listCapabilitiesWebhookUrl: string;
-  listSkillsWebhookUrl: string;
-  getSkillWebhookUrl: string;
+  pouchWebhookUrl: string;
 };
 
-type WebhookName =
+type PouchOperation =
   | "list-packages"
   | "get-package"
   | "list-capabilities"
   | "list-skills"
   | "get-skill";
 
-type WebhookTarget = {
-  webhookName: WebhookName;
+type PouchTarget = {
+  operation: PouchOperation;
   params: Record<string, unknown>;
-};
-
-const webhookPreference: Record<WebhookName, keyof Prefs> = {
-  "list-packages": "listPackagesWebhookUrl",
-  "get-package": "getPackageWebhookUrl",
-  "list-capabilities": "listCapabilitiesWebhookUrl",
-  "list-skills": "listSkillsWebhookUrl",
-  "get-skill": "getSkillWebhookUrl",
 };
 
 type KodyPackage = {
@@ -95,20 +83,20 @@ function displayExportName(exportName: string): string {
   return route === "__root__" ? "." : route;
 }
 
-async function invokeDiscoveryWebhook<T>({
-  webhookName,
+async function invokePouch<T>({
+  operation,
   params = {},
-}: WebhookTarget): Promise<T> {
+}: PouchTarget): Promise<T> {
   const prefs = getPrefs();
-  const url = prefs[webhookPreference[webhookName]].trim();
+  const url = prefs.pouchWebhookUrl.trim();
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "idempotency-key": `raycast:${webhookName}:${crypto.randomUUID()}`,
+      "idempotency-key": `raycast:pouch:${operation}:${crypto.randomUUID()}`,
     },
-    body: JSON.stringify(params),
+    body: JSON.stringify({ ...params, operation }),
   });
 
   const body = (await response.json()) as Record<string, unknown>;
@@ -125,16 +113,16 @@ const CATALOG_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 const fetchPackageTools = withCache(
   async (): Promise<PackageTool[]> => {
-    const packages = await invokeDiscoveryWebhook<{
+    const packages = await invokePouch<{
       packages: KodyPackage[];
     }>({
-      webhookName: "list-packages",
+      operation: "list-packages",
       params: {},
     });
     const details = await Promise.all(
       packages.packages.map((pkg) =>
-        invokeDiscoveryWebhook<GetPackageResult>({
-          webhookName: "get-package",
+        invokePouch<GetPackageResult>({
+          operation: "get-package",
           params: { packageId: pkg.packageId },
         }),
       ),
@@ -157,8 +145,8 @@ const fetchPackageTools = withCache(
 
 const fetchSkills = withCache(
   async (): Promise<SkillItem[]> => {
-    const result = await invokeDiscoveryWebhook<SkillItem[]>({
-      webhookName: "list-skills",
+    const result = await invokePouch<SkillItem[]>({
+      operation: "list-skills",
       params: {},
     });
     if (!Array.isArray(result)) {
@@ -176,10 +164,10 @@ const fetchSkills = withCache(
 
 const fetchCapabilities = withCache(
   async (): Promise<ToolItem[]> => {
-    const result = await invokeDiscoveryWebhook<{
+    const result = await invokePouch<{
       capabilities?: CapabilityRecord[];
     }>({
-      webhookName: "list-capabilities",
+      operation: "list-capabilities",
       params: {},
     });
     return (result.capabilities ?? []).map(capabilityToItem);
@@ -224,8 +212,8 @@ export async function loadSkills() {
 
 export async function fetchSkillDocument(id: string) {
   try {
-    const result = await invokeDiscoveryWebhook<unknown>({
-      webhookName: "get-skill",
+    const result = await invokePouch<unknown>({
+      operation: "get-skill",
       params: { id },
     });
     const markdown = skillDocumentFromPayload(result);

@@ -43,37 +43,9 @@
       "default": "cameronpak"
     },
     {
-      "name": "listPackagesWebhookUrl",
-      "title": "List Packages Webhook URL",
-      "description": "Credential URL for the Discovery Package list-packages webhook.",
-      "type": "password",
-      "required": true
-    },
-    {
-      "name": "getPackageWebhookUrl",
-      "title": "Get Package Webhook URL",
-      "description": "Credential URL for the Discovery Package get-package webhook.",
-      "type": "password",
-      "required": true
-    },
-    {
-      "name": "listCapabilitiesWebhookUrl",
-      "title": "List Capabilities Webhook URL",
-      "description": "Credential URL for the Discovery Package list-capabilities webhook.",
-      "type": "password",
-      "required": true
-    },
-    {
-      "name": "listSkillsWebhookUrl",
-      "title": "List Skills Webhook URL",
-      "description": "Credential URL for the Discovery Package list-skills webhook.",
-      "type": "password",
-      "required": true
-    },
-    {
-      "name": "getSkillWebhookUrl",
-      "title": "Get Skill Webhook URL",
-      "description": "Credential URL for the Discovery Package get-skill webhook.",
+      "name": "pouchWebhookUrl",
+      "title": "Pouch Webhook URL",
+      "description": "Credential URL for the Discovery Package pouch webhook.",
       "type": "password",
       "required": true
     },

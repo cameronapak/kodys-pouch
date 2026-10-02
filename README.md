@@ -12,19 +12,19 @@ This extension does not read disk skills or write stubs.
 
 ## Setup
 
-The Pouch calls five inbound webhooks on a Discovery Package. Installers own their copy and webhook URLs. Treat each URL as a credential.
+The Pouch calls one inbound webhook on a Discovery Package. Installers own their copy and webhook URL. Treat the URL as a credential.
 
 The Skills list loads from a published `skills` Package in your account: fork https://kody.codes/@kentcdodds/skills, then privately publish your copy. Your Discovery Package finds that Package by `kody.id` and loads Skill Contents through `get-skill`. If the `skills` Package is missing, the Pouch still shows Tools.
 
 1. Fork the Listing: [kody.codes/@cameronpak/raycast-kodys-pouch](https://kody.codes/@cameronpak/raycast-kodys-pouch)
 2. Review the fork, then publish it. A fork cannot receive webhook calls until it is published.
 3. Open your Package settings at `https://kody.codes/@<username>/raycast-kodys-pouch/settings#webhooks`.
-4. Mint and copy the URLs for `list-packages`, `get-package`, `list-capabilities`, `list-skills`, and `get-skill`. Do not paste them into chat.
+4. Mint and copy the `pouch` webhook URL. Do not paste it into chat.
 5. `npm install && npm run dev`
 6. Open **Kody's Pouch** in Raycast.
-7. Set your username, paste each URL into its matching password preference, and keep discovery id as `raycast-kodys-pouch`.
+7. Set your username, paste the URL into the Pouch Webhook URL password preference, and keep discovery id as `raycast-kodys-pouch`.
 
-If you already forked Kent's `raycast` listing for the Pouch, fork this Listing instead and mint its five webhook URLs.
+If you already use the five legacy URLs, update and publish your Discovery Package fork, mint `pouch`, then replace those preferences with the one Pouch Webhook URL.
 
 `author` in `package.json` is a Raycast Store handle. Change it before you publish. Local `npm run dev` works without that.
 

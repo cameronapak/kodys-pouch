@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { mergeInventory, itemKey, pruneKeys, type Item } from "./pouch.ts";
 
-test("loadSkills posts direct params to its webhook without bearer auth", async () => {
+test("loadSkills posts its operation to the Pouch webhook without bearer auth", async () => {
   const requests: Array<{
     url: string;
     headers: Headers;
@@ -23,12 +23,12 @@ test("loadSkills posts direct params to its webhook without bearer auth", async 
   await loadSkills();
 
   assert.equal(requests.length, 1);
-  assert.equal(requests[0]?.url, "https://hooks.test/list-skills");
-  assert.deepEqual(requests[0]?.body, {});
+  assert.equal(requests[0]?.url, "https://hooks.test/pouch");
+  assert.deepEqual(requests[0]?.body, { operation: "list-skills" });
   assert.equal(requests[0]?.headers.get("authorization"), null);
   assert.match(
     requests[0]?.headers.get("idempotency-key") ?? "",
-    /^raycast:list-skills:/,
+    /^raycast:pouch:list-skills:/,
   );
   assert.equal(
     requests.some((request) => request.url.includes("package-invocations")),
@@ -54,7 +54,7 @@ test("skillGetImportSpec scopes the discovery fork under the pref username", asy
   delete globalThis.__KODY_TEST_PREFS__;
 });
 
-test("fetchSkillDocument posts the id directly to the get-skill webhook", async () => {
+test("fetchSkillDocument posts its operation and id to the Pouch webhook", async () => {
   const urls: string[] = [];
   const bodies: unknown[] = [];
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -87,8 +87,10 @@ name: grill-with-docs
 Body`,
     );
   }
-  assert.deepEqual(urls, ["https://hooks.test/get-skill"]);
-  assert.deepEqual(bodies, [{ id: "mattpocock-grill-with-docs" }]);
+  assert.deepEqual(urls, ["https://hooks.test/pouch"]);
+  assert.deepEqual(bodies, [
+    { operation: "get-skill", id: "mattpocock-grill-with-docs" },
+  ]);
 });
 
 test("fetchSkillDocument extracts SKILL.md from the files array", async () => {
@@ -163,14 +165,10 @@ test("fetchSkillDocument normalizes content field and fails on empty", async () 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 type RecordedPost = {
-  exportName: string;
+  operation: string;
   params: Record<string, unknown>;
   idempotencyKey: string;
 };
-
-function exportNameFromUrl(url: string): string {
-  return new URL(url).pathname.split("/").filter(Boolean).at(-1) ?? "";
-}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status });
@@ -184,13 +182,16 @@ function stubCatalogFetch(options: { failCapabilities?: boolean } = {}) {
       string,
       unknown
     >;
-    const exportName = exportNameFromUrl(url);
+    assert.equal(url, "https://hooks.test/pouch");
+    const operation = String(body.operation ?? "");
+    const params = { ...body };
+    delete params.operation;
     posts.push({
-      exportName,
-      params: body,
+      operation,
+      params,
       idempotencyKey: new Headers(init?.headers).get("idempotency-key") ?? "",
     });
-    if (exportName === "list-skills") {
+    if (operation === "list-skills") {
       return jsonResponse({
         result: [
           {
@@ -201,7 +202,7 @@ function stubCatalogFetch(options: { failCapabilities?: boolean } = {}) {
         ],
       });
     }
-    if (exportName === "list-capabilities") {
+    if (operation === "list-capabilities") {
       if (options.failCapabilities) {
         return jsonResponse({ error: "down" }, 500);
       }
@@ -217,12 +218,12 @@ function stubCatalogFetch(options: { failCapabilities?: boolean } = {}) {
         },
       });
     }
-    if (exportName === "list-packages") {
+    if (operation === "list-packages") {
       return jsonResponse({
         result: { packages: [{ packageId: "pkg-1", kodyId: "skills" }] },
       });
     }
-    if (exportName === "get-package") {
+    if (operation === "get-package") {
       return jsonResponse({
         result: {
           kodyId: "skills",
@@ -230,7 +231,7 @@ function stubCatalogFetch(options: { failCapabilities?: boolean } = {}) {
         },
       });
     }
-    if (exportName === "get-skill") {
+    if (operation === "get-skill") {
       return jsonResponse({
         result: `---
 name: grill-with-docs
@@ -239,17 +240,17 @@ name: grill-with-docs
 Body`,
       });
     }
-    return jsonResponse({ error: `unexpected ${exportName}` }, 500);
+    return jsonResponse({ error: `unexpected ${operation}` }, 500);
   };
   return posts;
 }
 
-function catalogExports(posts: RecordedPost[]): string[] {
-  return posts.map((post) => post.exportName);
+function catalogOperations(posts: RecordedPost[]): string[] {
+  return posts.map((post) => post.operation);
 }
 
 function hasCatalogLists(posts: RecordedPost[]) {
-  const names = new Set(catalogExports(posts));
+  const names = new Set(catalogOperations(posts));
   return (
     names.has("list-skills") &&
     names.has("list-capabilities") &&
@@ -302,7 +303,7 @@ test("warm catalog does not POST skills, capabilities, or package-tools", async 
   );
   posts.length = 0;
   await Promise.all([loadTools(), loadSkills()]);
-  assert.deepEqual(catalogExports(posts), []);
+  assert.deepEqual(catalogOperations(posts), []);
 });
 
 test("expiry or miss POSTs skills, capabilities, and package-tools again", async () => {
@@ -320,7 +321,7 @@ test("expiry or miss POSTs skills, capabilities, and package-tools again", async
     posts.length = 0;
     Date.now = () => origin + SEVEN_DAYS_MS - 1;
     await Promise.all([loadTools(), loadSkills()]);
-    assert.deepEqual(catalogExports(posts), []);
+    assert.deepEqual(catalogOperations(posts), []);
 
     posts.length = 0;
     Date.now = () => origin + SEVEN_DAYS_MS + 1;
@@ -347,7 +348,7 @@ test("Refresh POSTs the three lists again and leaves last-good, pins, and recent
   const pinned = [itemKey(grill)];
   const recent = [itemKey(skillGet)];
   const firstKeys = posts
-    .filter((post) => post.exportName === "list-skills")
+    .filter((post) => post.operation === "list-skills")
     .map((post) => post.idempotencyKey);
 
   posts.length = 0;
@@ -358,7 +359,7 @@ test("Refresh POSTs the three lists again and leaves last-good, pins, and recent
   ]);
   assert.equal(hasCatalogLists(posts), true);
   const refreshKeys = posts
-    .filter((post) => post.exportName === "list-skills")
+    .filter((post) => post.operation === "list-skills")
     .map((post) => post.idempotencyKey);
   assert.notEqual(refreshKeys[0], firstKeys[0]);
 
@@ -436,20 +437,20 @@ test("catalog load does not POST skill contents; copy still does", async () => {
   const posts = stubCatalogFetch();
   await Promise.all([loadTools(), loadSkills()]);
   assert.equal(
-    posts.some((post) => post.exportName === "get-skill"),
+    posts.some((post) => post.operation === "get-skill"),
     false,
   );
 
   const loaded = await fetchSkillDocument("mattpocock-grill-with-docs");
   assert.equal(loaded.status, "ok");
   assert.equal(
-    posts.some((post) => post.exportName === "get-skill"),
+    posts.some((post) => post.operation === "get-skill"),
     true,
   );
   assert.ok(
     posts.some(
       (post) =>
-        post.exportName === "get-skill" &&
+        post.operation === "get-skill" &&
         post.params.id === "mattpocock-grill-with-docs",
     ),
   );

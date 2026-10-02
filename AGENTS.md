@@ -13,7 +13,7 @@ Keep this file brief. Put task-specific guidance behind a pointer.
 
 ## Guardrails
 
-- Keep the five Discovery Package webhook URLs in Raycast password preferences. Webhook URLs are credentials and stay out of chat.
+- Keep the Discovery Package `pouch` webhook URL in a Raycast password preference. The URL is a credential and stays out of chat.
 
 ## Language
 

@@ -33,7 +33,7 @@ A Kody package the user can browse and invoke. A Package is one kind of Parent.
 _Avoid_: app, plugin
 
 **Discovery Package**:
-The Kody Package the Pouch calls through five inbound webhook URLs to load Tools, Skills, and Skill Contents. It exists for people who install the Pouch. It is a dedicated Package (`kody.id` `raycast-kodys-pouch`) published as a Community Listing. Installers fork that Listing, publish their copy, and mint one credential URL per called export. Skills load through the owner's `skills` Package, usually a fork of Kent's skills Listing. The author's fork of Kent's `raycast` listing is hidden.
+The Kody Package the Pouch calls through one inbound `pouch` webhook URL to load Tools, Skills, and Skill Contents. It exists for people who install the Pouch. It is a dedicated Package (`kody.id` `raycast-kodys-pouch`) published as a Community Listing. Installers fork that Listing, publish their copy, and mint their own credential URL. The webhook accepts only five explicit read-only Pouch operations, not arbitrary exports. Skills load through the owner's `skills` Package, usually a fork of Kent's skills Listing. The author's fork of Kent's `raycast` listing is hidden.
 _Avoid_: official package, Kent's raycast, the fork as the product, `raycast` as this Package's id, shared host
 
 **Community**:
