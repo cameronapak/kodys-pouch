@@ -14,6 +14,7 @@ Keep this file brief. Put task-specific guidance behind a pointer.
 ## Guardrails
 
 - Keep the Discovery Package `pouch` webhook URL in a Raycast password preference. The URL is a credential and stays out of chat.
+- Keep README media in `media/`, Store screenshots in `metadata/`, and required-preference setup in `help.md`.
 
 ## Language
 

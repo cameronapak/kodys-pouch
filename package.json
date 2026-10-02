@@ -39,8 +39,7 @@
       "title": "Username",
       "description": "Your Kody username.",
       "type": "textfield",
-      "required": true,
-      "default": "cameronpak"
+      "required": true
     },
     {
       "name": "pouchWebhookUrl",
@@ -51,8 +50,8 @@
     },
     {
       "name": "discoveryKodyId",
-      "title": "Discovery package kody id",
-      "description": "Discovery Package kody id. Defaults to raycast-kodys-pouch.",
+      "title": "Discovery Package Kody ID",
+      "description": "The Discovery Package Kody ID. Defaults to raycast-kodys-pouch.",
       "type": "textfield",
       "required": false,
       "default": "raycast-kodys-pouch"
