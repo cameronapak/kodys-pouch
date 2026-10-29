@@ -123,7 +123,7 @@ test("Skill Mention keeps name and id distinct and carries the load recipe", () 
       id: "mattpocock-grill-with-docs",
       description: "Grill a plan",
     }),
-    "grill-with-docs skill — Grill a plan (Load via Kody MCP execute only: `import skillGet from 'kody:@cameronpak/skills/skill-get'` (default export), then `await skillGet({ id: 'mattpocock-grill-with-docs' })`. Read `files`, find path `SKILL.md`, follow its content.)",
+    "grill-with-docs skill — Grill a plan (Load via Kody MCP execute with plain `code`, not `invoke`: set `code` to `import skillGet from 'kody:@cameronpak/skills/skill-get'; export default (params) => skillGet(params);` and `params` to `{ id: 'mattpocock-grill-with-docs' }`. Read `files`, find path `SKILL.md`, follow its content.)",
   );
 });
 
@@ -136,7 +136,7 @@ test("Skill Mention with no description still reads cleanly", () => {
   });
   assert.equal(
     mention,
-    "bro skill (Load via Kody MCP execute only: `import skillGet from 'kody:@cameronpak/skills/skill-get'` (default export), then `await skillGet({ id: 'cursor-bro' })`. Read `files`, find path `SKILL.md`, follow its content.)",
+    "bro skill (Load via Kody MCP execute with plain `code`, not `invoke`: set `code` to `import skillGet from 'kody:@cameronpak/skills/skill-get'; export default (params) => skillGet(params);` and `params` to `{ id: 'cursor-bro' }`. Read `files`, find path `SKILL.md`, follow its content.)",
   );
 });
 
@@ -153,7 +153,7 @@ test("Skill Mention uses the caller's discovery fork when given", () => {
   );
   assert.equal(
     mention,
-    "bro skill — Restate the last message in plain human language, with no jargon. (Load via Kody MCP execute only: `import skillGet from 'kody:@janedoe/raycast-kodys-pouch/get-skill'` (default export), then `await skillGet({ id: 'cursor-bro' })`. Read `files`, find path `SKILL.md`, follow its content.)",
+    "bro skill — Restate the last message in plain human language, with no jargon. (Load via Kody MCP execute with plain `code`, not `invoke`: set `code` to `import skillGet from 'kody:@janedoe/raycast-kodys-pouch/get-skill'; export default (params) => skillGet(params);` and `params` to `{ id: 'cursor-bro' }`. Read `files`, find path `SKILL.md`, follow its content.)",
   );
 });
 
@@ -209,7 +209,7 @@ inner
   );
 });
 
-test("Package Tool Mention names invoke kodyId and export", () => {
+test("Package Tool Mention names plain-code execute, kodyId, and export", () => {
   assert.equal(
     formatMention({
       kind: "tool",
@@ -219,7 +219,7 @@ test("Package Tool Mention names invoke kodyId and export", () => {
       kodyId: "skills",
       exportName: "skill-get",
     }),
-    "skill-get tool (use Kody MCP to execute kodyId: skills export: skill-get)",
+    "skill-get tool (use Kody MCP execute with plain `code`, not `invoke`, for kodyId: skills export: skill-get)",
   );
 });
 
@@ -276,7 +276,7 @@ test("Built-in Tool Mention names the capability", () => {
       description: "List saved packages",
       capability: "package_list",
     }),
-    "package_list tool (use Kody MCP to execute package_list)",
+    "package_list tool (use Kody MCP execute with plain `code`, not `invoke`, for package_list)",
   );
 });
 
@@ -290,7 +290,7 @@ test("MCP Tool Mention names server and tool", () => {
       server: "macro",
       tool: "ListSkills",
     }),
-    "ListSkills tool (use Kody MCP to execute macro ListSkills)",
+    "ListSkills tool (use Kody MCP execute with plain `code`, not `invoke`, for macro ListSkills)",
   );
 });
 
@@ -304,7 +304,7 @@ test("Other Tool Mention follows the same one-line pattern", () => {
       provider: "openapi",
       ref: "canva createdesignexportjob",
     }),
-    "createdesignexportjob tool (use Kody MCP to execute openapi canva createdesignexportjob)",
+    "createdesignexportjob tool (use Kody MCP execute with plain `code`, not `invoke`, for openapi canva createdesignexportjob)",
   );
 });
 

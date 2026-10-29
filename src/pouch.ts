@@ -683,19 +683,19 @@ const DEFAULT_SKILL_GET_IMPORT = "kody:@cameronpak/skills/skill-get";
 function formatSkillMention(item: SkillItem, skillGetImport?: string): string {
   const importer = skillGetImport ?? DEFAULT_SKILL_GET_IMPORT;
   const lead = item.description.trim();
-  return `${item.name} skill${lead === "" ? "" : ` — ${lead}`} (Load via Kody MCP execute only: \`import skillGet from '${importer}'\` (default export), then \`await skillGet({ id: '${item.id}' })\`. Read \`files\`, find path \`SKILL.md\`, follow its content.)`;
+  return `${item.name} skill${lead === "" ? "" : ` — ${lead}`} (Load via Kody MCP execute with plain \`code\`, not \`invoke\`: set \`code\` to \`import skillGet from '${importer}'; export default (params) => skillGet(params);\` and \`params\` to \`{ id: '${item.id}' }\`. Read \`files\`, find path \`SKILL.md\`, follow its content.)`;
 }
 
 function formatToolMention(item: ToolItem): string {
   switch (item.parentKind) {
     case "package":
-      return `${item.name} tool (use Kody MCP to execute kodyId: ${item.kodyId} export: ${item.exportName})`;
+      return `${item.name} tool (use Kody MCP execute with plain \`code\`, not \`invoke\`, for kodyId: ${item.kodyId} export: ${item.exportName})`;
     case "kody":
-      return `${item.name} tool (use Kody MCP to execute ${item.capability})`;
+      return `${item.name} tool (use Kody MCP execute with plain \`code\`, not \`invoke\`, for ${item.capability})`;
     case "mcp":
-      return `${item.name} tool (use Kody MCP to execute ${item.server} ${item.tool})`;
+      return `${item.name} tool (use Kody MCP execute with plain \`code\`, not \`invoke\`, for ${item.server} ${item.tool})`;
     case "other":
-      return `${item.name} tool (use Kody MCP to execute ${item.provider} ${item.ref})`;
+      return `${item.name} tool (use Kody MCP execute with plain \`code\`, not \`invoke\`, for ${item.provider} ${item.ref})`;
     default: {
       const _never: never = item;
       return _never;
